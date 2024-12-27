@@ -817,7 +817,6 @@
                 "download_package": "Unity Packageをダウンロード",
                 "delete": "削除",
                 "delete_impostor": "インポスターを削除",
-                "regenerate_impostor": "Regenerate Impostor",
                 "create_impostor": "インポスターを作成"
             },
             "info": {
