@@ -261,7 +261,7 @@ export const useUserStore = defineStore('User', () => {
         dateFriendedInfo: []
     });
 
-    const currentTravelers = ref(new Map());
+    const currentTravelers = reactive(new Map());
     const subsetOfLanguages = ref([]);
     const languageDialog = ref({
         visible: false,
@@ -269,19 +269,12 @@ export const useUserStore = defineStore('User', () => {
         languageChoice: false,
         languages: []
     });
-    const pastDisplayNameTable = ref({
-        data: [],
-        tableProps: {
-            stripe: true,
-            size: 'small',
-            defaultSort: {
-                prop: 'updated_at',
-                order: 'descending'
-            }
-        }
+    const sendBoopDialog = ref({
+        visible: false,
+        userId: ''
     });
-    const showUserDialogHistory = ref(new Set());
-    const customUserTags = ref(new Map());
+    const showUserDialogHistory = reactive(new Set());
+    const customUserTags = reactive(new Map());
 
     const state = reactive({
         instancePlayerCount: new Map(),
@@ -293,19 +286,18 @@ export const useUserStore = defineStore('User', () => {
     const cachedUsers = new Map();
 
     const isLocalUserVrcPlusSupporter = computed(
-        () => currentUser.value.$isVRCPlus
+        () => currentUser.value.$isVRCPlus || AppDebug.debugVrcPlus
     );
 
     watch(
         () => watchState.isLoggedIn,
         (isLoggedIn) => {
             if (!isLoggedIn) {
-                currentTravelers.value.clear();
-                showUserDialogHistory.value.clear();
+                currentTravelers.clear();
+                showUserDialogHistory.clear();
                 state.instancePlayerCount.clear();
-                customUserTags.value.clear();
+                customUserTags.clear();
                 state.notes.clear();
-                pastDisplayNameTable.value.data = [];
                 subsetOfLanguages.value = [];
             }
         },
@@ -507,7 +499,7 @@ export const useUserStore = defineStore('User', () => {
                 newCount++;
                 state.instancePlayerCount.set(ref.location, newCount);
             }
-            const tag = customUserTags.value.get(json.id);
+            const tag = customUserTags.get(json.id);
             if (tag) {
                 ref.$customTag = tag.tag;
                 ref.$customTagColour = tag.colour;
@@ -557,7 +549,7 @@ export const useUserStore = defineStore('User', () => {
                 }
             }
             for (const prop in json) {
-                if (typeof ref[prop] !== 'undefined') {
+                if (typeof json[prop] !== 'undefined') {
                     ref[prop] = json[prop];
                 }
             }
@@ -578,23 +570,20 @@ export const useUserStore = defineStore('User', () => {
         // traveling
         if (ref.location === 'traveling') {
             ref.$location = parseLocation(ref.travelingToLocation);
-            if (
-                !currentTravelers.value.has(ref.id) &&
-                ref.travelingToLocation
-            ) {
-                const travelRef = {
+            if (!currentTravelers.has(ref.id) && ref.travelingToLocation) {
+                const travelRef = reactive({
                     created_at: new Date().toJSON(),
                     ...ref
-                };
-                currentTravelers.value.set(ref.id, travelRef);
+                });
+                currentTravelers.set(ref.id, travelRef);
                 sharedFeedStore.sharedFeed.pendingUpdate = true;
                 sharedFeedStore.updateSharedFeed(false);
                 onPlayerTraveling(travelRef);
             }
         } else {
             ref.$location = parseLocation(ref.location);
-            if (currentTravelers.value.has(ref.id)) {
-                currentTravelers.value.delete(ref.id);
+            if (currentTravelers.has(ref.id)) {
+                currentTravelers.delete(ref.id);
                 sharedFeedStore.sharedFeed.pendingUpdate = true;
                 sharedFeedStore.updateSharedFeed(false);
             }
@@ -831,8 +820,9 @@ export const useUserStore = defineStore('User', () => {
                                 }
                             }
                         }
-                        D.isFavorite =
-                            favoriteStore.cachedFavoritesByObjectId.has(D.id);
+                        D.isFavorite = favoriteStore.cachedFavoritesByObjectId(
+                            D.id
+                        );
                         if (D.ref.friendRequestStatus === 'incoming') {
                             D.incomingRequest = true;
                         } else if (D.ref.friendRequestStatus === 'outgoing') {
@@ -901,13 +891,13 @@ export const useUserStore = defineStore('User', () => {
                                             }
                                         }
                                     );
-                                    const displayNameMapSorted = new Map(
-                                        [...displayNameMap.entries()].sort(
-                                            (a, b) => b[1] - a[1]
-                                        )
-                                    );
-                                    D.previousDisplayNames = Array.from(
-                                        displayNameMapSorted.keys()
+                                    displayNameMap.forEach(
+                                        (updated_at, displayName) => {
+                                            D.previousDisplayNames.push({
+                                                displayName,
+                                                updated_at
+                                            });
+                                        }
                                     );
                                 });
                             AppApi.GetVRChatUserModeration(
@@ -922,6 +912,8 @@ export const useUserStore = defineStore('User', () => {
                                 }
                             });
                         } else {
+                            D.previousDisplayNames =
+                                currentUser.value.pastDisplayNames;
                             database
                                 .getUserStats(D.ref, inCurrentWorld)
                                 .then((ref1) => {
@@ -941,8 +933,8 @@ export const useUserStore = defineStore('User', () => {
                     });
                 }
             });
-        showUserDialogHistory.value.delete(userId);
-        showUserDialogHistory.value.add(userId);
+        showUserDialogHistory.delete(userId);
+        showUserDialogHistory.add(userId);
         searchStore.quickSearchItems = searchStore.quickSearchUserHistory();
     }
 
@@ -1571,12 +1563,12 @@ export const useUserStore = defineStore('User', () => {
 
     function addCustomTag(data) {
         if (data.Tag) {
-            customUserTags.value.set(data.UserId, {
+            customUserTags.set(data.UserId, {
                 tag: data.Tag,
                 colour: data.TagColour
             });
         } else {
-            customUserTags.value.delete(data.UserId);
+            customUserTags.delete(data.UserId);
         }
         const feedUpdate = {
             userId: data.UserId,
@@ -1728,12 +1720,12 @@ export const useUserStore = defineStore('User', () => {
                 }
             }
             for (const prop in json) {
-                if (typeof ref[prop] !== 'undefined') {
+                if (typeof json[prop] !== 'undefined') {
                     ref[prop] = json[prop];
                 }
             }
         } else {
-            ref = reactive({
+            ref = {
                 acceptedPrivacyVersion: 0,
                 acceptedTOSVersion: 0,
                 accountDeletionDate: null,
@@ -1837,7 +1829,7 @@ export const useUserStore = defineStore('User', () => {
                 $locationTag: '',
                 $travelingToLocation: '',
                 ...json
-            });
+            };
             if (gameStore.isGameRunning) {
                 ref.$previousAvatarSwapTime = Date.now();
             }
@@ -1864,9 +1856,6 @@ export const useUserStore = defineStore('User', () => {
                     }
                 );
             }
-        }
-        if (ref.pastDisplayNames) {
-            pastDisplayNameTable.value.data = ref.pastDisplayNames;
         }
 
         // when isGameRunning use gameLog instead of API
@@ -1960,6 +1949,11 @@ export const useUserStore = defineStore('User', () => {
         return ref;
     }
 
+    function showSendBoopDialog(userId) {
+        sendBoopDialog.value.userId = userId;
+        sendBoopDialog.value.visible = true;
+    }
+
     return {
         state,
 
@@ -1968,7 +1962,7 @@ export const useUserStore = defineStore('User', () => {
         userDialog,
         subsetOfLanguages,
         languageDialog,
-        pastDisplayNameTable,
+        sendBoopDialog,
         showUserDialogHistory,
         customUserTags,
         cachedUsers,
@@ -1986,7 +1980,7 @@ export const useUserStore = defineStore('User', () => {
         initUserNotes,
         getCurrentUser,
         handleConfig,
-
+        showSendBoopDialog,
         checkNote
     };
 });

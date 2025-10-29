@@ -9,7 +9,6 @@ import GameLog from './../views/GameLog/GameLog.vue';
 import Moderation from './../views/Moderation/Moderation.vue';
 import Notification from './../views/Notifications/Notification.vue';
 import PlayerList from './../views/PlayerList/PlayerList.vue';
-import Profile from './../views/Profile/Profile.vue';
 import Search from './../views/Search/Search.vue';
 import Settings from './../views/Settings/Settings.vue';
 import Tools from './../views/Tools/Tools.vue';
@@ -26,17 +25,14 @@ const routes = [
     {
         path: '/friendlist',
         name: 'friendList',
-        component: FriendList,
-        meta: { fullScreen: true }
+        component: FriendList
     },
     {
         path: '/charts',
         name: 'charts',
-        component: Charts,
-        meta: { fullScreen: true }
+        component: Charts
     },
     { path: '/tools', name: 'tools', component: Tools },
-    { path: '/profile', name: 'profile', component: Profile },
     { path: '/settings', name: 'settings', component: Settings }
 ];
 

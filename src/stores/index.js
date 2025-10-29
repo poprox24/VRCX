@@ -36,7 +36,56 @@ import { useWorldStore } from './world';
 import { useWristOverlaySettingsStore } from './settings/wristOverlay';
 
 export const pinia = createPinia();
-pinia.use(createSentryPiniaPlugin());
+
+pinia.use(
+    createSentryPiniaPlugin({
+        stateTransformer: (state) => ({
+            ...state,
+            Auth: null,
+            Feed: null,
+            Favorite: null,
+            Friend: null,
+            User: {
+                // @ts-ignore
+                ...state.User,
+                currentUser: null,
+                subsetOfLanguages: null,
+                languageDialog: {
+                    // @ts-ignore
+                    ...state.User.languageDialog,
+                    languages: null
+                }
+            },
+            GameLog: {
+                // @ts-ignore
+                ...state.GameLog,
+                gameLogTable: null
+            },
+            Notification: {
+                // @ts-ignore
+                ...state.Notification,
+                notificationTable: null
+            },
+            Moderation: {
+                // @ts-ignore
+                ...state.Moderation,
+                playerModerationTable: null
+            },
+            Photon: null,
+            SharedFeed: {
+                // @ts-ignore
+                ...state.SharedFeed,
+                sharedFeed: null
+            },
+            Group: {
+                // @ts-ignore
+                ...state.Group,
+                groupInstances: null,
+                inGameGroupOrder: null
+            }
+        })
+    })
+);
 
 export function createGlobalStores() {
     return {

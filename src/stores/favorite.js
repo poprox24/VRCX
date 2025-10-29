@@ -32,10 +32,30 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         favoriteAvatars_: []
     });
 
-    let cachedFavorites = new Map();
+    const cachedFavorites = reactive(new Map());
 
-    const cachedFavoriteGroups = ref(new Map());
-    const cachedFavoriteGroupsByTypeName = ref(new Map());
+    const currentFavoriteTab = ref('friend');
+
+    const cachedFavoriteGroups = ref({});
+
+    const cachedFavoriteGroupsByTypeName = computed(() => {
+        const group = {};
+
+        for (const k in favoriteFriendGroups.value) {
+            const element = favoriteFriendGroups.value[k];
+            group[element.key] = element;
+        }
+        for (const k in favoriteWorldGroups.value) {
+            const element = favoriteWorldGroups.value[k];
+            group[element.key] = element;
+        }
+        for (const k in favoriteAvatarGroups.value) {
+            const element = favoriteAvatarGroups.value[k];
+            group[element.key] = element;
+        }
+
+        return group;
+    });
 
     const favoriteFriends = computed(() => {
         if (appearanceSettingsStore.sortFavorites) {
@@ -102,9 +122,7 @@ export const useFavoriteStore = defineStore('Favorite', () => {
 
     const localAvatarFavorites = ref({});
 
-    const localAvatarFavoritesList = ref([]);
-
-    const localAvatarFavoriteGroups = ref([]);
+    const editFavoritesMode = ref(false);
 
     const favoriteDialog = ref({
         visible: false,
@@ -114,11 +132,34 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         currentGroup: {}
     });
 
-    const localWorldFavoritesList = ref([]);
+    const cachedFavoritesByObjectId = computed(() => (objectId) => {
+        for (const item of cachedFavorites.values()) {
+            if (item.favoriteId === objectId) {
+                return item;
+            }
+        }
+        return undefined;
+    });
 
-    const cachedFavoritesByObjectId = ref(new Map());
+    const localAvatarFavoriteGroups = computed(() =>
+        Object.keys(localAvatarFavorites.value).sort()
+    );
 
-    const localWorldFavoriteGroups = ref([]);
+    const localWorldFavoriteGroups = computed(() =>
+        Object.keys(localWorldFavorites.value).sort()
+    );
+
+    const localWorldFavoritesList = computed(() =>
+        Object.values(localWorldFavorites.value)
+            .flat()
+            .map((fav) => fav.id)
+    );
+
+    const localAvatarFavoritesList = computed(() =>
+        Object.values(localAvatarFavorites.value)
+            .flat()
+            .map((fav) => fav.id)
+    );
 
     const groupedByGroupKeyFavoriteFriends = computed(() => {
         const groupedByGroupKeyFavoriteFriends = {};
@@ -133,14 +174,28 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         return groupedByGroupKeyFavoriteFriends;
     });
 
+    const localWorldFavGroupLength = computed(() => (group) => {
+        const favoriteGroup = localWorldFavorites.value[group];
+        if (!favoriteGroup) {
+            return 0;
+        }
+        return favoriteGroup.length;
+    });
+
+    const localAvatarFavGroupLength = computed(() => (group) => {
+        const favoriteGroup = localAvatarFavorites.value[group];
+        if (!favoriteGroup) {
+            return 0;
+        }
+        return favoriteGroup.length;
+    });
+
     watch(
         () => watchState.isLoggedIn,
         (isLoggedIn) => {
             friendStore.localFavoriteFriends.clear();
             cachedFavorites.clear();
-            cachedFavoritesByObjectId.value.clear();
-            cachedFavoriteGroups.value.clear();
-            cachedFavoriteGroupsByTypeName.value.clear();
+            cachedFavoriteGroups.value = {};
             favoriteFriendGroups.value = [];
             favoriteWorldGroups.value = [];
             favoriteAvatarGroups.value = [];
@@ -150,8 +205,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             state.favoriteFriends_ = [];
             state.favoriteWorlds_ = [];
             state.favoriteAvatars_ = [];
-            localAvatarFavoriteGroups.value = [];
-            localAvatarFavoritesList.value = [];
             localAvatarFavorites.value = {};
             favoriteDialog.value.visible = false;
             worldImportDialogVisible.value = false;
@@ -234,11 +287,10 @@ export const useFavoriteStore = defineStore('Favorite', () => {
     }
 
     function handleFavoriteDelete(args) {
-        const ref = cachedFavoritesByObjectId.value.get(args.params.objectId);
+        const ref = cachedFavoritesByObjectId.value(args.params.objectId);
         if (typeof ref === 'undefined') {
             return;
         }
-        cachedFavoritesByObjectId.value.delete(args.params.objectId);
         friendStore.localFavoriteFriends.delete(args.params.objectId);
         friendStore.updateSidebarFriendsList();
         if (ref.$isDeleted) {
@@ -260,10 +312,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             return;
         }
         args.ref = ref;
-        if (ref.$groupRef !== null) {
-            ref.$groupRef.displayName = ref.displayName;
-            ref.$groupRef.visibility = ref.visibility;
-        }
     }
 
     function handleFavoriteGroupClear(args) {
@@ -272,7 +320,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             if (ref.$isDeleted || ref.$groupKey !== key) {
                 continue;
             }
-            cachedFavoritesByObjectId.value.delete(ref.favoriteId);
             friendStore.localFavoriteFriends.delete(ref.favoriteId);
             friendStore.updateSidebarFriendsList();
             ref.$isDeleted = true;
@@ -306,7 +353,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
     function expireFavorites() {
         friendStore.localFavoriteFriends.clear();
         cachedFavorites.clear();
-        cachedFavoritesByObjectId.value.clear();
         state.favoriteObjects.clear();
         state.favoriteFriends_ = [];
         state.favoriteWorlds_ = [];
@@ -314,10 +360,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
     }
 
     function handleFavoriteAtDelete(args) {
-        const { ref } = args;
-        if (ref.$groupRef !== null) {
-            --ref.$groupRef.count;
-        }
         applyFavorite(args.ref.type, args.ref.favoriteId);
         friendStore.updateFriend(args.ref.favoriteId);
         const userDialog = userStore.userDialog;
@@ -330,7 +372,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             userDialog.isFavorite = false;
         }
 
-        const favoriteStore = useFavoriteStore();
         const worldDialog = worldStore.worldDialog;
         if (
             !(
@@ -338,8 +379,9 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                 worldDialog.id !== args.ref.favoriteId
             )
         ) {
-            worldDialog.isFavorite =
-                favoriteStore.localWorldFavoritesList.includes(worldDialog.id);
+            worldDialog.isFavorite = localWorldFavoritesList.value.includes(
+                worldDialog.id
+            );
         }
 
         const avatarDialog = avatarStore.avatarDialog;
@@ -362,7 +404,7 @@ export const useFavoriteStore = defineStore('Favorite', () => {
      */
     async function applyFavorite(type, objectId, sortTop = false) {
         let ref;
-        const favorite = cachedFavoritesByObjectId.value.get(objectId);
+        const favorite = cachedFavoritesByObjectId.value(objectId);
         let ctx = state.favoriteObjects.get(objectId);
         if (typeof favorite !== 'undefined') {
             let isTypeChanged = false;
@@ -375,7 +417,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                     name: '',
                     $selected: false
                 };
-                state.favoriteObjects.set(objectId, ctx);
                 if (type === 'friend') {
                     ref = userStore.cachedUsers.get(objectId);
                     if (typeof ref === 'undefined') {
@@ -400,6 +441,7 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                         ctx.name = ref.name;
                     }
                 }
+                state.favoriteObjects.set(objectId, ctx);
                 isTypeChanged = true;
             } else {
                 if (ctx.type !== type) {
@@ -538,13 +580,14 @@ export const useFavoriteStore = defineStore('Favorite', () => {
     }
 
     function expireFavoriteGroups() {
-        for (const ref of cachedFavoriteGroups.value.values()) {
-            ref.$isExpired = true;
+        for (const key in cachedFavoriteGroups.value) {
+            cachedFavoriteGroups.value[key].$isExpired = true;
         }
     }
 
     function deleteExpiredFavoriteGroups() {
-        for (const ref of cachedFavoriteGroups.value.values()) {
+        for (const key in cachedFavoriteGroups.value) {
+            const ref = cachedFavoriteGroups.value[key];
             if (ref.$isDeleted || ref.$isExpired === false) {
                 continue;
             }
@@ -608,7 +651,8 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         };
         const assigns = new Set();
         // assign the same name first
-        for (ref of cachedFavoriteGroups.value.values()) {
+        for (const key in cachedFavoriteGroups.value) {
+            const ref = cachedFavoriteGroups.value[key];
             if (ref.$isDeleted) {
                 continue;
             }
@@ -623,14 +667,14 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                         group.displayName = ref.displayName;
                     }
                     group.visibility = ref.visibility;
-                    ref.$groupRef = group;
                     assigns.add(ref.id);
                     break;
                 }
             }
         }
 
-        for (ref of cachedFavoriteGroups.value.values()) {
+        for (const key in cachedFavoriteGroups.value) {
+            const ref = cachedFavoriteGroups.value[key];
             if (ref.$isDeleted || assigns.has(ref.id)) {
                 continue;
             }
@@ -644,29 +688,21 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                     group.key = `${group.type}:${ref.name}`;
                     group.name = ref.name;
                     group.displayName = ref.displayName;
-                    ref.$groupRef = group;
                     assigns.add(ref.id);
                     break;
                 }
             }
         }
         // update favorites
-        cachedFavoriteGroupsByTypeName.value.clear();
-        for (const type in types) {
-            for (group of types[type]) {
-                cachedFavoriteGroupsByTypeName.value.set(group.key, group);
-            }
-        }
+
         for (ref of cachedFavorites.values()) {
-            ref.$groupRef = null;
             if (ref.$isDeleted) {
                 continue;
             }
-            group = cachedFavoriteGroupsByTypeName.value.get(ref.$groupKey);
+            group = cachedFavoriteGroupsByTypeName.value[ref.$groupKey];
             if (typeof group === 'undefined') {
                 continue;
             }
-            ref.$groupRef = group;
             ++group.count;
         }
     }
@@ -690,7 +726,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             console.error(err);
         }
         expireFavorites();
-        cachedFavoriteGroupsByTypeName.value.clear();
         processBulk({
             fn: favoriteRequest.getFavorites,
             N: -1,
@@ -728,7 +763,7 @@ export const useFavoriteStore = defineStore('Favorite', () => {
      * @returns {any}
      */
     function applyFavoriteGroup(json) {
-        let ref = cachedFavoriteGroups.value.get(json.id);
+        let ref = cachedFavoriteGroups.value[json.id];
         if (typeof ref === 'undefined') {
             ref = {
                 id: '',
@@ -742,11 +777,10 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                 // VRCX
                 $isDeleted: false,
                 $isExpired: false,
-                $groupRef: null,
                 //
                 ...json
             };
-            cachedFavoriteGroups.value.set(ref.id, ref);
+            cachedFavoriteGroups.value[ref.id] = ref;
         } else {
             Object.assign(ref, json);
             ref.$isExpired = false;
@@ -771,12 +805,10 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                 $isDeleted: false,
                 $isExpired: false,
                 $groupKey: '',
-                $groupRef: null,
                 //
                 ...json
             };
             cachedFavorites.set(ref.id, ref);
-            cachedFavoritesByObjectId.value.set(ref.favoriteId, ref);
             if (
                 ref.type === 'friend' &&
                 (generalSettingsStore.localFavoriteFriendsGroups.length === 0 ||
@@ -793,12 +825,9 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         }
         ref.$groupKey = `${ref.type}:${String(ref.tags[0])}`;
 
-        if (ref.$isDeleted === false && ref.$groupRef === null) {
-            const group = cachedFavoriteGroupsByTypeName.value.get(
-                ref.$groupKey
-            );
+        if (ref.$isDeleted === false) {
+            const group = cachedFavoriteGroupsByTypeName.value[ref.$groupKey];
             if (typeof group !== 'undefined') {
-                ref.$groupRef = group;
                 ++group.count;
             }
         }
@@ -920,19 +949,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
 
     /**
      *
-     * @param {string} group
-     * @returns {*|number}
-     */
-    function getLocalWorldFavoriteGroupLength(group) {
-        const favoriteGroup = localWorldFavorites.value[group];
-        if (!favoriteGroup) {
-            return 0;
-        }
-        return favoriteGroup.length;
-    }
-
-    /**
-     *
      * @param {string} worldId
      * @param {string} group
      */
@@ -944,15 +960,10 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         if (typeof ref === 'undefined') {
             return;
         }
-        if (!localWorldFavoritesList.value.includes(worldId)) {
-            localWorldFavoritesList.value.push(worldId);
-        }
         if (!localWorldFavorites.value[group]) {
             localWorldFavorites.value[group] = [];
         }
-        if (!localWorldFavoriteGroups.value.includes(group)) {
-            localWorldFavoriteGroups.value.push(group);
-        }
+
         localWorldFavorites.value[group].unshift(ref);
         database.addWorldToCache(ref);
         database.addWorldToFavorites(worldId, group);
@@ -1005,14 +1016,8 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         if (typeof ref === 'undefined') {
             return;
         }
-        if (!localAvatarFavoritesList.value.includes(avatarId)) {
-            localAvatarFavoritesList.value.push(avatarId);
-        }
         if (!localAvatarFavorites.value[group]) {
             localAvatarFavorites.value[group] = [];
-        }
-        if (!localAvatarFavoriteGroups.value.includes(group)) {
-            localAvatarFavoriteGroups.value.push(group);
         }
         localAvatarFavorites.value[group].unshift(ref);
         database.addAvatarToCache(ref);
@@ -1051,19 +1056,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             }
         }
         return false;
-    }
-
-    /**
-     *
-     * @param {string} group
-     * @returns {*|number}
-     */
-    function getLocalAvatarFavoriteGroupLength(group) {
-        const favoriteGroup = localAvatarFavorites.value[group];
-        if (!favoriteGroup) {
-            return 0;
-        }
-        return favoriteGroup.length;
     }
 
     function updateFavoriteDialog(objectId) {
@@ -1109,7 +1101,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             avatarIdRemoveList.add(favoriteGroup[i].id);
         }
 
-        removeFromArray(localAvatarFavoriteGroups.value, group);
         delete localAvatarFavorites.value[group];
         database.deleteAvatarFavoriteGroup(group);
 
@@ -1160,7 +1151,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
                 }
             }
             if (!avatarInFavorites) {
-                removeFromArray(localAvatarFavoritesList.value, id);
                 if (!avatarStore.avatarHistory.has(id)) {
                     database.removeAvatarFromCache(id);
                 }
@@ -1169,7 +1159,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
     }
 
     function sortLocalAvatarFavorites() {
-        localAvatarFavoriteGroups.value.sort();
         if (!appearanceSettingsStore.sortFavorites) {
             for (let i = 0; i < localAvatarFavoriteGroups.value.length; ++i) {
                 const group = localAvatarFavoriteGroups.value[i];
@@ -1195,10 +1184,8 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             });
             return;
         }
-        localAvatarFavoriteGroups.value.push(newName);
         localAvatarFavorites.value[newName] = localAvatarFavorites.value[group];
 
-        removeFromArray(localAvatarFavoriteGroups.value, group);
         delete localAvatarFavorites.value[group];
         database.renameAvatarFavoriteGroup(newName, group);
         sortLocalAvatarFavorites();
@@ -1220,9 +1207,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         }
         if (!localAvatarFavorites.value[group]) {
             localAvatarFavorites.value[group] = [];
-        }
-        if (!localAvatarFavoriteGroups.value.includes(group)) {
-            localAvatarFavoriteGroups.value.push(group);
         }
         sortLocalAvatarFavorites();
     }
@@ -1269,8 +1253,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             groupsArr = ['Favorites'];
         }
 
-        localAvatarFavoriteGroups.value = groupsArr;
-        localAvatarFavoritesList.value = Array.from(localListSet);
         localAvatarFavorites.value = localFavorites;
 
         sortLocalAvatarFavorites();
@@ -1310,7 +1292,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             }
         }
         if (!avatarInFavorites) {
-            removeFromArray(localAvatarFavoritesList.value, avatarId);
             if (!avatarStore.avatarHistory.has(avatarId)) {
                 database.removeAvatarFromCache(avatarId);
             }
@@ -1327,7 +1308,7 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             avatarStore.avatarDialog.id === avatarId
         ) {
             avatarStore.avatarDialog.isFavorite =
-                cachedFavoritesByObjectId.value.has(avatarId);
+                cachedFavoritesByObjectId.value(avatarId);
         }
 
         // update UI
@@ -1347,7 +1328,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             worldIdRemoveList.add(favoriteGroup[i].id);
         }
 
-        removeFromArray(localWorldFavoriteGroups.value, group);
         delete localWorldFavorites.value[group];
         database.deleteWorldFavoriteGroup(group);
 
@@ -1370,13 +1350,11 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         }
 
         worldIdRemoveList.forEach((id) => {
-            removeFromArray(localWorldFavoritesList.value, id);
             database.removeWorldFromCache(id);
         });
     }
 
     function sortLocalWorldFavorites() {
-        localWorldFavoriteGroups.value.sort();
         if (!appearanceSettingsStore.sortFavorites) {
             for (let i = 0; i < localWorldFavoriteGroups.value.length; ++i) {
                 const group = localWorldFavoriteGroups.value[i];
@@ -1402,10 +1380,8 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             });
             return;
         }
-        localWorldFavoriteGroups.value.push(newName);
         localWorldFavorites.value[newName] = localWorldFavorites.value[group];
 
-        removeFromArray(localWorldFavoriteGroups.value, group);
         delete localWorldFavorites.value[group];
         database.renameWorldFavoriteGroup(newName, group);
         sortLocalWorldFavorites();
@@ -1445,7 +1421,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             }
         }
         if (!worldInFavorites) {
-            removeFromArray(localWorldFavoritesList.value, worldId);
             database.removeWorldFromCache(worldId);
         }
         database.removeWorldFromFavorites(worldId, group);
@@ -1460,7 +1435,7 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             worldStore.worldDialog.id === worldId
         ) {
             worldStore.worldDialog.isFavorite =
-                cachedFavoritesByObjectId.value.has(worldId);
+                cachedFavoritesByObjectId.value(worldId);
         }
 
         // update UI
@@ -1509,8 +1484,6 @@ export const useFavoriteStore = defineStore('Favorite', () => {
             groupsArr = ['Favorites'];
         }
 
-        localWorldFavoriteGroups.value = groupsArr;
-        localWorldFavoritesList.value = Array.from(localListSet);
         localWorldFavorites.value = localFavorites;
 
         sortLocalWorldFavorites();
@@ -1609,24 +1582,25 @@ export const useFavoriteStore = defineStore('Favorite', () => {
         cachedFavoritesByObjectId,
         localWorldFavoriteGroups,
         groupedByGroupKeyFavoriteFriends,
+        currentFavoriteTab,
+        localWorldFavGroupLength,
+        localAvatarFavGroupLength,
+        editFavoritesMode,
 
         initFavorites,
         applyFavorite,
         refreshFavoriteGroups,
         refreshFavorites,
         applyFavoriteGroup,
-        applyFavoriteCached,
         refreshFavoriteAvatars,
         clearBulkFavoriteSelection,
         showWorldImportDialog,
         showAvatarImportDialog,
         showFriendImportDialog,
-        getLocalWorldFavoriteGroupLength,
         addLocalWorldFavorite,
         hasLocalWorldFavorite,
         hasLocalAvatarFavorite,
         addLocalAvatarFavorite,
-        getLocalAvatarFavoriteGroupLength,
         updateFavoriteDialog,
         deleteLocalAvatarFavoriteGroup,
         renameLocalAvatarFavoriteGroup,

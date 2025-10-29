@@ -381,7 +381,7 @@
                                         loading="lazy" />
                                     <div
                                         v-if="avatarDialog.ref.authorId === currentUser.id"
-                                        style="position: absolute; bottom: 5px; left: 33.3%">
+                                        style="position: absolute; bottom: 35px; left: 38%">
                                         <el-button
                                             size="small"
                                             :icon="Back"
@@ -611,6 +611,7 @@
     } from '../../../shared/utils';
     import { useAvatarStore, useFavoriteStore, useGalleryStore, useGameStore, useUserStore } from '../../../stores';
     import { avatarModerationRequest, avatarRequest, favoriteRequest, miscRequest } from '../../../api';
+    import { AppDebug } from '../../../service/appConfig.js';
     import { database } from '../../../service/database';
     import { getNextDialogIndex } from '../../../shared/utils/base/ui';
     import { handleImageUploadInput } from '../../../shared/utils/imageUpload';
@@ -727,7 +728,7 @@
     }
 
     function getImageUrlFromImageId(imageId) {
-        return `https://api.vrchat.cloud/api/1/file/${imageId}/1/`;
+        return `${AppDebug.endpointDomain}/file/${imageId}/1/`;
     }
 
     function handleDialogOpen() {

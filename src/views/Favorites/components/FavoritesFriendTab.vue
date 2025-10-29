@@ -29,7 +29,7 @@
                     <span style="color: #909399; font-size: 12px; margin-left: 10px"
                         >{{ group.count }}/{{ group.capacity }}</span
                     >
-                    <el-tooltip placement="top" :content="t('view.favorite.rename_tooltip')">
+                    <el-tooltip placement="top" :content="t('view.favorite.rename_tooltip')" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Edit"
@@ -37,7 +37,7 @@
                             style="margin-left: 10px"
                             @click.stop="changeFavoriteGroupName(group)"></el-button>
                     </el-tooltip>
-                    <el-tooltip placement="right" :content="t('view.favorite.clear_tooltip')">
+                    <el-tooltip placement="right" :content="t('view.favorite.clear_tooltip')" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Delete"
@@ -46,11 +46,7 @@
                             @click.stop="clearFavoriteGroup(group)"></el-button>
                     </el-tooltip>
                 </template>
-                <div
-                    v-if="group.count"
-                    class="x-friend-list"
-                    :class="{ 'is-editing': editFavoritesMode }"
-                    style="margin-top: 10px">
+                <div v-if="group.count" class="x-friend-list" style="margin-top: 10px">
                     <FavoritesFriendItem
                         v-for="favorite in groupedByGroupKeyFavoriteFriends[group.key]"
                         :key="favorite.id"
@@ -89,13 +85,6 @@
 
     import FavoritesFriendItem from './FavoritesFriendItem.vue';
     import FriendExportDialog from '../dialogs/FriendExportDialog.vue';
-
-    defineProps({
-        editFavoritesMode: {
-            type: Boolean,
-            default: false
-        }
-    });
 
     const emit = defineEmits(['change-favorite-group-name']);
 
@@ -142,15 +131,3 @@
         emit('change-favorite-group-name', group);
     }
 </script>
-
-<style scoped>
-    .x-friend-list :deep(.editing) {
-        display: none;
-    }
-    .x-friend-list.is-editing :deep(.editing) {
-        display: block;
-    }
-    .x-friend-list.is-editing :deep(.default) {
-        display: none;
-    }
-</style>

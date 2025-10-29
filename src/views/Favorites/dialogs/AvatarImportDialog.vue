@@ -59,7 +59,7 @@
                     <el-button size="small">
                         <span v-if="avatarImportDialog.avatarImportLocalFavoriteGroup">
                             {{ avatarImportDialog.avatarImportLocalFavoriteGroup }} ({{
-                                getLocalAvatarFavoriteGroupLength(avatarImportDialog.avatarImportLocalFavoriteGroup)
+                                localAvatarFavGroupLength(avatarImportDialog.avatarImportLocalFavoriteGroup)
                             }})
                             <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                         </span>
@@ -74,7 +74,7 @@
                                 <el-dropdown-item
                                     style="display: block; margin: 10px 0"
                                     @click="selectAvatarImportLocalGroup(group)">
-                                    {{ group }} ({{ getLocalAvatarFavoriteGroupLength(group) }})
+                                    {{ group }} ({{ localAvatarFavGroupLength(group) }})
                                 </el-dropdown-item>
                             </template>
                         </el-dropdown-menu>
@@ -190,9 +190,9 @@
     const emit = defineEmits(['update:avatarImportDialogInput']);
     const { t } = useI18n();
     const { showUserDialog } = useUserStore();
-    const { favoriteAvatarGroups, avatarImportDialogInput, avatarImportDialogVisible, localAvatarFavoriteGroups } =
+    const { favoriteAvatarGroups, avatarImportDialogInput, avatarImportDialogVisible } =
         storeToRefs(useFavoriteStore());
-    const { addLocalAvatarFavorite, getLocalAvatarFavoriteGroupLength } = useFavoriteStore();
+    const { addLocalAvatarFavorite, localAvatarFavGroupLength, localAvatarFavoriteGroups } = useFavoriteStore();
     const { showAvatarDialog, applyAvatar } = useAvatarStore();
     const { showFullscreenImageDialog } = useGalleryStore();
 

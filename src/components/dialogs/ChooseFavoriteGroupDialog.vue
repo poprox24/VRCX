@@ -29,13 +29,13 @@
                     style="display: block; width: 100%; margin: 10px 0; white-space: initial; height: auto"
                     @click="removeLocalWorldFavorite(favoriteDialog.objectId, group)">
                     <el-icon style="margin-right: 5px"><Check /></el-icon>
-                    {{ group }} ({{ getLocalWorldFavoriteGroupLength(group) }})
+                    {{ group }} ({{ localWorldFavGroupLength(group) }})
                 </el-button>
                 <el-button
                     v-else
                     style="display: block; width: 100%; margin: 10px 0; white-space: initial; height: auto"
                     @click="addLocalWorldFavorite(favoriteDialog.objectId, group)">
-                    {{ group }} ({{ getLocalWorldFavoriteGroupLength(group) }})
+                    {{ group }} ({{ localWorldFavGroupLength(group) }})
                 </el-button>
             </template>
         </div>
@@ -47,14 +47,14 @@
                     style="display: block; width: 100%; margin: 10px 0; white-space: initial; height: auto"
                     @click="removeLocalAvatarFavorite(favoriteDialog.objectId, group)">
                     <el-icon style="margin-right: 5px"><Check /></el-icon>
-                    {{ group }} ({{ getLocalAvatarFavoriteGroupLength(group) }})
+                    {{ group }} ({{ localAvatarFavGroupLength(group) }})
                 </el-button>
                 <el-button
                     v-else
                     style="display: block; width: 100%; margin: 10px 0; white-space: initial; height: auto"
                     :disabled="!isLocalUserVrcPlusSupporter"
                     @click="addLocalAvatarFavorite(favoriteDialog.objectId, group)">
-                    {{ group }} ({{ getLocalAvatarFavoriteGroupLength(group) }})
+                    {{ group }} ({{ localAvatarFavGroupLength(group) }})
                 </el-button>
             </template>
         </div>
@@ -76,24 +76,20 @@
     const { t } = useI18n();
 
     const favoriteStore = useFavoriteStore();
+    const { favoriteFriendGroups, favoriteAvatarGroups, favoriteWorldGroups, favoriteDialog } =
+        storeToRefs(favoriteStore);
     const {
-        favoriteFriendGroups,
-        favoriteAvatarGroups,
-        favoriteWorldGroups,
-        localAvatarFavoriteGroups,
-        favoriteDialog,
-        localWorldFavoriteGroups
-    } = storeToRefs(favoriteStore);
-    const {
-        getLocalWorldFavoriteGroupLength,
+        localWorldFavGroupLength,
         addLocalWorldFavorite,
         hasLocalWorldFavorite,
         hasLocalAvatarFavorite,
         addLocalAvatarFavorite,
-        getLocalAvatarFavoriteGroupLength,
+        localAvatarFavGroupLength,
         removeLocalAvatarFavorite,
         removeLocalWorldFavorite,
-        deleteFavoriteNoConfirm
+        deleteFavoriteNoConfirm,
+        localWorldFavoriteGroups,
+        localAvatarFavoriteGroups
     } = favoriteStore;
     const { isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
 
@@ -141,7 +137,7 @@
             })
             .then(() => {
                 isVisible.value = false;
-                new Noty({ type: 'success', text: 'favorite added!' }).show();
+                new Noty({ type: 'success', text: 'Favorite added!' }).show();
             })
             .finally(() => {
                 loading.value = false;

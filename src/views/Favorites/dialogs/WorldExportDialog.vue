@@ -41,9 +41,7 @@
         <el-dropdown trigger="click" size="small" style="margin-left: 10px">
             <el-button size="small">
                 <span v-if="worldExportLocalFavoriteGroup">
-                    {{ worldExportLocalFavoriteGroup }} ({{
-                        getLocalWorldFavoriteGroupLength(worldExportLocalFavoriteGroup)
-                    }})
+                    {{ worldExportLocalFavoriteGroup }} ({{ localWorldFavGroupLength(worldExportLocalFavoriteGroup) }})
                     <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </span>
                 <span v-else>
@@ -102,14 +100,8 @@
     const { t } = useI18n();
 
     const favoriteStore = useFavoriteStore();
-    const {
-        favoriteWorlds,
-        favoriteWorldGroups,
-        localWorldFavorites,
-        localWorldFavoriteGroups,
-        localWorldFavoritesList
-    } = storeToRefs(favoriteStore);
-    const { getLocalWorldFavoriteGroupLength } = favoriteStore;
+    const { favoriteWorlds, favoriteWorldGroups, localWorldFavorites } = storeToRefs(favoriteStore);
+    const { localWorldFavGroupLength, localWorldFavoritesList, localWorldFavoriteGroups } = favoriteStore;
     const { cachedWorlds } = useWorldStore();
 
     const worldExportContent = ref('');
@@ -217,8 +209,8 @@
             favoriteWorlds.value.forEach((ref) => {
                 lines.push(resText(ref.ref));
             });
-            for (let i = 0; i < localWorldFavoritesList.value.length; ++i) {
-                const worldId = localWorldFavoritesList.value[i];
+            for (let i = 0; i < localWorldFavoritesList.length; ++i) {
+                const worldId = localWorldFavoritesList[i];
                 const ref = cachedWorlds.get(worldId);
                 if (typeof ref !== 'undefined') {
                     lines.push(resText(ref));

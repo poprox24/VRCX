@@ -137,9 +137,9 @@ export const useNotificationStore = defineStore('Notification', () => {
                     // get instance name for invite
                     const L = parseLocation(ref.details.worldId);
                     if (L.isRealInstance) {
-                        instanceRequest.getInstance({
+                        instanceRequest.getCachedInstance({
                             worldId: L.worldId,
-                            instanceId: L.tag
+                            instanceId: L.instanceId
                         });
                     }
                 }
@@ -412,6 +412,15 @@ export const useNotificationStore = defineStore('Notification', () => {
                 }
             }
             ref.details = details;
+        }
+        if (ref.type === 'boop') {
+            ref.message = ref.title;
+            if (ref.details?.emojiId.startsWith('default_')) {
+                ref.details.imageUrl = ref.details.emojiId;
+                ref.message += ` ${ref.details.emojiId.replace('default_', '')}`;
+            } else {
+                ref.details.imageUrl = `${AppDebug.endpointDomain}/file/${ref.details.emojiId}/${ref.details.emojiVersion}`;
+            }
         }
         return ref;
     }

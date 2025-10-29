@@ -65,7 +65,7 @@
                     <span style="color: #909399; font-size: 12px; margin-left: 10px">
                         {{ group.count }}/{{ group.capacity }}
                     </span>
-                    <el-tooltip placement="top" :content="t('view.favorite.rename_tooltip')">
+                    <el-tooltip placement="top" :content="t('view.favorite.rename_tooltip')" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Edit"
@@ -73,7 +73,7 @@
                             style="margin-left: 10px"
                             @click.stop="changeFavoriteGroupName(group)" />
                     </el-tooltip>
-                    <el-tooltip placement="right" :content="t('view.favorite.clear_tooltip')">
+                    <el-tooltip placement="right" :content="t('view.favorite.clear_tooltip')" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Delete"
@@ -82,11 +82,7 @@
                             @click.stop="clearFavoriteGroup(group)" />
                     </el-tooltip>
                 </template>
-                <div
-                    v-if="group.count"
-                    class="x-friend-list"
-                    :class="{ 'is-editing': editFavoritesMode }"
-                    style="margin-top: 10px">
+                <div v-if="group.count" class="x-friend-list" style="margin-top: 10px">
                     <FavoritesAvatarItem
                         v-for="favorite in groupedByGroupKeyFavoriteAvatars[group.key]"
                         :key="favorite.id"
@@ -115,7 +111,7 @@
                     <span style="color: #909399; font-size: 12px; margin-left: 10px"
                         >{{ avatarHistoryArray.length }}/100</span
                     >
-                    <el-tooltip placement="right" content="Clear">
+                    <el-tooltip placement="right" content="Clear" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Delete"
@@ -157,7 +153,7 @@
                 @click="refreshLocalAvatarFavorites">
                 {{ t('view.favorite.avatars.refresh') }}
             </el-button>
-            <el-button v-else size="small" style="margin-left: 5px" @click="refreshingLocalFavorites = false">
+            <el-button v-else size="small" style="margin-left: 5px" @click="cancelLocalAvatarRefresh">
                 <el-icon class="is-loading"><Loading /></el-icon>
                 <span>{{ t('view.favorite.avatars.cancel_refresh') }}</span>
             </el-button>
@@ -165,9 +161,9 @@
                 <template #title v-if="localAvatarFavorites[group]">
                     <span :style="{ fontWeight: 'bold', fontSize: '14px', marginLeft: '10px' }">{{ group }}</span>
                     <span :style="{ color: '#909399', fontSize: '12px', marginLeft: '10px' }">{{
-                        getLocalAvatarFavoriteGroupLength(group)
+                        localAvatarFavGroupLength(group)
                     }}</span>
-                    <el-tooltip placement="top" :content="t('view.favorite.rename_tooltip')">
+                    <el-tooltip placement="top" :content="t('view.favorite.rename_tooltip')" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Edit"
@@ -175,7 +171,7 @@
                             :style="{ marginLeft: '5px' }"
                             @click.stop="promptLocalAvatarFavoriteGroupRename(group)"></el-button>
                     </el-tooltip>
-                    <el-tooltip placement="right" :content="t('view.favorite.delete_tooltip')">
+                    <el-tooltip placement="right" :content="t('view.favorite.delete_tooltip')" :teleported="false">
                         <el-button
                             size="small"
                             :icon="Delete"
@@ -184,11 +180,7 @@
                             @click.stop="promptLocalAvatarFavoriteGroupDelete(group)"></el-button>
                     </el-tooltip>
                 </template>
-                <div
-                    v-if="localAvatarFavorites[group].length"
-                    class="x-friend-list"
-                    :class="{ 'is-editing': editFavoritesMode }"
-                    :style="{ marginTop: '10px' }">
+                <div v-if="localAvatarFavorites[group].length" class="x-friend-list" :style="{ marginTop: '10px' }">
                     <FavoritesAvatarItem
                         v-for="favorite in localAvatarFavorites[group]"
                         :key="favorite.id"
@@ -219,50 +211,45 @@
 
 <script setup>
     import { Delete, Edit, Loading } from '@element-plus/icons-vue';
-    import { computed, ref } from 'vue';
+    import { computed, onBeforeUnmount, ref } from 'vue';
     import { ElMessageBox } from 'element-plus';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
     import { useAppearanceSettingsStore, useAvatarStore, useFavoriteStore, useUserStore } from '../../../stores';
-    import { favoriteRequest } from '../../../api';
+    import { avatarRequest, favoriteRequest } from '../../../api';
 
     import AvatarExportDialog from '../dialogs/AvatarExportDialog.vue';
     import FavoritesAvatarItem from './FavoritesAvatarItem.vue';
     import FavoritesAvatarLocalHistoryItem from './FavoritesAvatarLocalHistoryItem.vue';
 
-    defineProps({
-        editFavoritesMode: {
-            type: Boolean,
-            default: false
-        },
-        refreshingLocalFavorites: {
-            type: Boolean,
-            default: false
-        }
-    });
+    import * as workerTimers from 'worker-timers';
 
     const emit = defineEmits(['change-favorite-group-name', 'refresh-local-avatar-favorites']);
 
     const { sortFavorites } = storeToRefs(useAppearanceSettingsStore());
     const { setSortFavorites } = useAppearanceSettingsStore();
-    const { favoriteAvatars, favoriteAvatarGroups, localAvatarFavorites, localAvatarFavoriteGroups } =
-        storeToRefs(useFavoriteStore());
+    const { favoriteAvatars, favoriteAvatarGroups, localAvatarFavorites } = storeToRefs(useFavoriteStore());
     const {
         showAvatarImportDialog,
-        getLocalAvatarFavoriteGroupLength,
+        localAvatarFavGroupLength,
         deleteLocalAvatarFavoriteGroup,
         renameLocalAvatarFavoriteGroup,
-        newLocalAvatarFavoriteGroup
+        newLocalAvatarFavoriteGroup,
+        localAvatarFavoritesList,
+        localAvatarFavoriteGroups
     } = useFavoriteStore();
     const { avatarHistoryArray } = storeToRefs(useAvatarStore());
-    const { promptClearAvatarHistory, showAvatarDialog } = useAvatarStore();
+    const { promptClearAvatarHistory, showAvatarDialog, applyAvatar } = useAvatarStore();
     const { isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
     const { t } = useI18n();
 
     const avatarExportDialogVisible = ref(false);
     const avatarFavoriteSearch = ref('');
     const avatarFavoriteSearchResults = ref([]);
+    const refreshingLocalFavorites = ref(false);
+    const worker = ref(null);
+    const refreshCancelToken = ref(null);
 
     const sortFav = computed({
         get() {
@@ -296,8 +283,8 @@
         }
 
         const results = [];
-        for (let i = 0; i < localAvatarFavoriteGroups.value.length; ++i) {
-            const group = localAvatarFavoriteGroups.value[i];
+        for (let i = 0; i < localAvatarFavoriteGroups.length; ++i) {
+            const group = localAvatarFavoriteGroups[i];
             if (!localAvatarFavorites.value[group]) {
                 continue;
             }
@@ -384,10 +371,6 @@
             .catch(() => {});
     }
 
-    function refreshLocalAvatarFavorites() {
-        emit('refresh-local-avatar-favorites');
-    }
-
     function promptLocalAvatarFavoriteGroupRename(group) {
         ElMessageBox.prompt(
             t('prompt.local_favorite_group_rename.description'),
@@ -422,16 +405,71 @@
             })
             .catch(() => {});
     }
-</script>
 
-<style scoped>
-    .x-friend-list :deep(.editing) {
-        display: none;
+    async function refreshLocalAvatarFavorites() {
+        if (refreshingLocalFavorites.value) {
+            return;
+        }
+        refreshingLocalFavorites.value = true;
+        const token = {
+            cancelled: false,
+            resolve: null
+        };
+        refreshCancelToken.value = token;
+        try {
+            for (const avatarId of localAvatarFavoritesList) {
+                if (token.cancelled) {
+                    break;
+                }
+                try {
+                    const args = await avatarRequest.getAvatar({
+                        avatarId
+                    });
+                    applyAvatar(args.json);
+                } catch (err) {
+                    console.error(err);
+                }
+                if (token.cancelled) {
+                    break;
+                }
+                await new Promise((resolve) => {
+                    token.resolve = resolve;
+                    worker.value = workerTimers.setTimeout(() => {
+                        worker.value = null;
+                        resolve();
+                    }, 1000);
+                });
+            }
+        } finally {
+            if (worker.value) {
+                workerTimers.clearTimeout(worker.value);
+                worker.value = null;
+            }
+            if (refreshCancelToken.value === token) {
+                refreshCancelToken.value = null;
+            }
+            refreshingLocalFavorites.value = false;
+        }
     }
-    .x-friend-list.is-editing :deep(.editing) {
-        display: block;
+
+    function cancelLocalAvatarRefresh() {
+        if (!refreshingLocalFavorites.value) {
+            return;
+        }
+        if (refreshCancelToken.value) {
+            refreshCancelToken.value.cancelled = true;
+            if (typeof refreshCancelToken.value.resolve === 'function') {
+                refreshCancelToken.value.resolve();
+            }
+        }
+        if (worker.value) {
+            workerTimers.clearTimeout(worker.value);
+            worker.value = null;
+        }
+        refreshingLocalFavorites.value = false;
     }
-    .x-friend-list.is-editing :deep(.default) {
-        display: none;
-    }
-</style>
+
+    onBeforeUnmount(() => {
+        cancelLocalAvatarRefresh();
+    });
+</script>

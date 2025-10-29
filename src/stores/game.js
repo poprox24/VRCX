@@ -74,8 +74,12 @@ export const useGameStore = defineStore('Game', () => {
     }
 
     async function sweepVRChatCache() {
-        const output = await AssetBundleManager.SweepCache();
-        console.log('SweepCache', output);
+        try {
+            const output = await AssetBundleManager.SweepCache();
+            console.log('SweepCache', output);
+        } catch (e) {
+            console.error('SweepCache failed', e);
+        }
         if (advancedSettingsStore.isVRChatConfigDialogVisible) {
             getVRChatCacheSize();
         }
@@ -170,7 +174,7 @@ export const useGameStore = defineStore('Game', () => {
                 avatarStore.addAvatarWearTime(
                     userStore.currentUser.currentAvatar
                 );
-                userStore.currentUser.$previousAvatarSwapTime = '';
+                userStore.currentUser.$previousAvatarSwapTime = null;
             }
             locationStore.lastLocationReset();
             gameLogStore.clearNowPlaying();
@@ -219,14 +223,14 @@ export const useGameStore = defineStore('Game', () => {
                 ElMessageBox.alert(
                     'VRCX has noticed VRChat debug logging is disabled. VRCX requires debug logging in order to function correctly. Please enable debug logging in VRChat quick menu settings > debug > enable debug logging, then rejoin the instance or restart VRChat.',
                     'Enable debug logging'
-                );
+                ).catch(() => {});
                 console.error('Failed to enable debug logging', result);
                 return;
             }
             ElMessageBox.alert(
                 'VRCX has noticed VRChat debug logging is disabled and automatically re-enabled it. VRCX requires debug logging in order to function correctly.',
                 'Enabled debug logging'
-            );
+            ).catch(() => {});
             console.log('Enabled debug logging');
         } catch (e) {
             console.error(e);

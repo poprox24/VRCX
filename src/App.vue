@@ -17,14 +17,12 @@
             <template v-if="watchState.isLoggedIn">
                 <NavMenu></NavMenu>
 
-                <RouterView v-if="requiresFullScreen"></RouterView>
-
-                <el-splitter v-else @resize-end="setAsideWidth" v-show="isSideBarTabShow">
+                <el-splitter @resize-end="setAsideWidth">
                     <el-splitter-panel>
                         <RouterView></RouterView>
                     </el-splitter-panel>
 
-                    <el-splitter-panel :min="200" :max="700" :size="asideWidth">
+                    <el-splitter-panel v-if="isSideBarTabShow" :min="250" :max="700" :size="asideWidth" collapsible>
                         <Sidebar></Sidebar>
                     </el-splitter-panel>
                 </el-splitter>
@@ -58,11 +56,13 @@
 
                 <ChooseFavoriteGroupDialog></ChooseFavoriteGroupDialog>
 
-                <EditInviteMessageDialog></EditInviteMessageDialog>
-
                 <VRChatConfigDialog></VRChatConfigDialog>
 
                 <PrimaryPasswordDialog></PrimaryPasswordDialog>
+
+                <SendBoopDialog></SendBoopDialog>
+
+                <ChangelogDialog></ChangelogDialog>
             </template>
         </div>
     </el-config-provider>
@@ -72,7 +72,6 @@
     import { computed, onBeforeMount, onMounted } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-    import { useRoute } from 'vue-router';
 
     import cs from 'element-plus/es/locale/lang/cs';
     import en from 'element-plus/es/locale/lang/en';
@@ -95,8 +94,8 @@
 
     import AvatarDialog from './components/dialogs/AvatarDialog/AvatarDialog.vue';
     import AvatarImportDialog from './views/Favorites/dialogs/AvatarImportDialog.vue';
+    import ChangelogDialog from './views/Settings/dialogs/ChangelogDialog.vue';
     import ChooseFavoriteGroupDialog from './components/dialogs/ChooseFavoriteGroupDialog.vue';
-    import EditInviteMessageDialog from './views/Profile/dialogs/EditInviteMessageDialog.vue';
     import FriendImportDialog from './views/Favorites/dialogs/FriendImportDialog.vue';
     import FullscreenImagePreview from './components/FullscreenImagePreview.vue';
     import GroupDialog from './components/dialogs/GroupDialog/GroupDialog.vue';
@@ -109,6 +108,7 @@
     import NavMenu from './components/NavMenu.vue';
     import PreviousInstancesInfoDialog from './components/dialogs/PreviousInstancesDialog/PreviousInstancesInfoDialog.vue';
     import PrimaryPasswordDialog from './views/Settings/dialogs/PrimaryPasswordDialog.vue';
+    import SendBoopDialog from './components/dialogs/SendBoopDialog.vue';
     import Sidebar from './views/Sidebar/Sidebar.vue';
     import UserDialog from './components/dialogs/UserDialog/UserDialog.vue';
     import VRCXUpdateDialog from './components/dialogs/VRCXUpdateDialog.vue';
@@ -117,12 +117,6 @@
     import WorldImportDialog from './views/Favorites/dialogs/WorldImportDialog.vue';
 
     import './app.scss';
-
-    const route = useRoute();
-
-    const requiresFullScreen = computed(() => {
-        return route.meta.fullScreen;
-    });
 
     console.log(`isLinux: ${LINUX}`);
 

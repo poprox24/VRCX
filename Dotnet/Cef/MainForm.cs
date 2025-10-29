@@ -7,7 +7,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Reflection;
+using System.IO;
 using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
@@ -22,6 +22,8 @@ namespace VRCX
         public static NativeWindow nativeWindow;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         public ChromiumWebBrowser Browser;
+        private readonly Icon _appIcon;
+        private readonly Icon _appIconNoty;
         private readonly Timer _saveTimer;
         private int LastLocationX;
         private int LastLocationY;
@@ -41,10 +43,11 @@ namespace VRCX
             _saveTimer.Tick += SaveTimer_Tick;
             try
             {
-                var location = Assembly.GetExecutingAssembly().Location;
-                var icon = Icon.ExtractAssociatedIcon(location);
-                Icon = icon;
-                TrayIcon.Icon = icon;
+                var path = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+                _appIcon = new Icon(Path.Combine(path, "VRCX.ico"));
+                _appIconNoty = new Icon(Path.Combine(path, "VRCX_notify.ico"));
+                Icon = _appIcon;
+                TrayIcon.Icon = _appIcon;
             }
             catch (Exception ex)
             {
@@ -86,7 +89,7 @@ namespace VRCX
             Browser.GotFocus += (_, _) =>
             {
                 if (Browser != null && !Browser.IsLoading && Browser.CanExecuteJavascriptInMainFrame)
-                    Browser.ExecuteScriptAsync("$pinia.vrcStatus.onBrowserFocus()");
+                    Browser.ExecuteScriptAsync("window?.$pinia?.vrcStatus?.onBrowserFocus");
             };
 
             JavascriptBindings.ApplyAppJavascriptBindings(Browser.JavascriptObjectRepository);
@@ -162,7 +165,7 @@ namespace VRCX
 
             if (WindowState != FormWindowState.Normal)
                 return;
-            
+
             LastSizeWidth = Size.Width;
             LastSizeHeight = Size.Height;
 
@@ -204,7 +207,7 @@ namespace VRCX
             VRCXStorage.Instance.Set("VRCX_SizeWidth", LastSizeWidth.ToString());
             VRCXStorage.Instance.Set("VRCX_SizeHeight", LastSizeHeight.ToString());
             VRCXStorage.Instance.Set("VRCX_WindowState", ((int)LastWindowStateToRestore).ToString());
-            VRCXStorage.Instance.Flush();
+            VRCXStorage.Instance.Save();
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -245,6 +248,11 @@ namespace VRCX
         {
             SaveWindowState();
             Application.Exit();
+        }
+
+        public void SetTrayIconNotification(bool notify)
+        {
+            TrayIcon.Icon = notify ? _appIconNoty : _appIcon;
         }
     }
 }

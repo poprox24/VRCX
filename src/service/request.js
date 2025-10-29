@@ -187,7 +187,7 @@ export function request(endpoint, options) {
                 ElMessageBox.alert(
                     t('api.error.message.vpn_in_use'),
                     `403 ${t('api.error.message.login_error')}`
-                );
+                ).catch(() => {});
                 authStore.handleLogoutEvent();
                 $throw(403, endpoint);
             }
@@ -205,6 +205,10 @@ export function request(endpoint, options) {
             }
             if (status === 404 && endpoint.endsWith('/persist/exists')) {
                 return false;
+            }
+            if (status === 404 && endpoint.endsWith('/respond')) {
+                // ignore when responding to expired notification
+                return null;
             }
             if (
                 init.method === 'GET' &&
@@ -284,6 +288,7 @@ export function $throw(code, error, endpoint) {
     let ignoreError = false;
     if (
         (code === 404 || code === -1) &&
+        typeof endpoint === 'string' &&
         endpoint.split('/').length === 2 &&
         (endpoint.startsWith('users/') ||
             endpoint.startsWith('worlds/') ||
@@ -295,11 +300,11 @@ export function $throw(code, error, endpoint) {
     }
     if (
         (code === 403 || code === 404 || code === -1) &&
-        endpoint.startsWith('instances/')
+        endpoint?.startsWith('instances/')
     ) {
         ignoreError = true;
     }
-    if (endpoint.startsWith('analysis/')) {
+    if (endpoint?.startsWith('analysis/')) {
         ignoreError = true;
     }
     if (text.length && !ignoreError) {

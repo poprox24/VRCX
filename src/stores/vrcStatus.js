@@ -75,6 +75,13 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
             }
         });
         lastTimeFetched.value = Date.now();
+        if (response.status !== 200) {
+            console.error('Failed to fetch VRChat status', response);
+            lastStatus.value = 'Failed to fetch VRC status';
+            pollingInterval.value = 2 * 60 * 1000; // 2 minutes
+            updateAlert();
+            return;
+        }
         const data = JSON.parse(response.data);
         lastStatusTime.value = new Date(data.page.updated_at);
         if (data.status.description === 'All Systems Operational') {
@@ -97,6 +104,10 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
                 Referer: 'https://vrcx.app'
             }
         });
+        if (response.status !== 200) {
+            console.error('Failed to fetch VRChat status summary', response);
+            return;
+        }
         const data = JSON.parse(response.data);
         let summary = '';
         for (const component of data.components) {

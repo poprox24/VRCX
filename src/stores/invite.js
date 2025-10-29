@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { defineStore } from 'pinia';
 
@@ -15,13 +15,6 @@ export const useInviteStore = defineStore('Invite', () => {
     const gameStore = useGameStore();
     const launchStore = useLaunchStore();
     const advancedSettingsStore = useAdvancedSettingsStore();
-
-    const editInviteMessageDialog = ref({
-        visible: false,
-        inviteMessage: {},
-        messageType: '',
-        newMessage: ''
-    });
 
     const inviteMessageTable = ref({
         data: [],
@@ -70,7 +63,6 @@ export const useInviteStore = defineStore('Invite', () => {
             inviteResponseMessageTable.value.data = [];
             inviteRequestMessageTable.value.data = [];
             inviteRequestResponseMessageTable.value.data = [];
-            editInviteMessageDialog.value.visible = false;
             inviteMessageTable.value.visible = false;
             inviteResponseMessageTable.value.visible = false;
             inviteRequestMessageTable.value.visible = false;
@@ -79,18 +71,13 @@ export const useInviteStore = defineStore('Invite', () => {
         { flush: 'sync' }
     );
 
-    /**
-     *
-     * @param {string} messageType
-     * @param {any} inviteMessage
-     */
-    function showEditInviteMessageDialog(messageType, inviteMessage) {
-        const D = editInviteMessageDialog.value;
-        D.newMessage = inviteMessage.message;
-        D.visible = true;
-        D.inviteMessage = inviteMessage;
-        D.messageType = messageType;
-    }
+    const canOpenInstanceInGame = computed(() => {
+        return (
+            !LINUX &&
+            gameStore.isGameRunning &&
+            !advancedSettingsStore.selfInviteOverride
+        );
+    });
 
     /**
      *
@@ -120,14 +107,6 @@ export const useInviteStore = defineStore('Invite', () => {
             });
     }
 
-    function canOpenInstanceInGame() {
-        return (
-            !LINUX &&
-            gameStore.isGameRunning &&
-            !advancedSettingsStore.selfInviteOverride
-        );
-    }
-
     function newInstanceSelfInvite(worldId) {
         instanceStore.createNewInstance(worldId).then((args) => {
             const location = args?.json?.location;
@@ -143,7 +122,7 @@ export const useInviteStore = defineStore('Invite', () => {
             if (!L.isRealInstance) {
                 return;
             }
-            if (canOpenInstanceInGame()) {
+            if (canOpenInstanceInGame.value) {
                 const secureOrShortName =
                     args.json.shortName || args.json.secureName;
                 launchStore.tryOpenInstanceInVrc(location, secureOrShortName);
@@ -165,12 +144,10 @@ export const useInviteStore = defineStore('Invite', () => {
     }
 
     return {
-        editInviteMessageDialog,
         inviteMessageTable,
         inviteResponseMessageTable,
         inviteRequestMessageTable,
         inviteRequestResponseMessageTable,
-        showEditInviteMessageDialog,
         refreshInviteMessageTableData,
         newInstanceSelfInvite,
         canOpenInstanceInGame

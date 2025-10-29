@@ -313,15 +313,13 @@
 
     watch(
         () => route.path,
-        (newPath, oldPath) => {
-            console.log('Route changed - FriendsList', newPath, oldPath);
+        () => {
             nextTick(() => friendsListSearchChange());
         },
         { immediate: true }
     );
 
     function friendsListSearchChange() {
-        console.log('Friends List Search Change');
         friendsListLoading.value = true;
         let query = '';
         let cleanedQuery = '';
@@ -394,7 +392,7 @@
                 inputValue: pending.join('\r\n')
             }
         )
-            .then((action) => {
+            .then(({ action }) => {
                 if (action === 'confirm') {
                     bulkUnfriendSelection();
                 }
@@ -404,8 +402,10 @@
 
     function bulkUnfriendSelection() {
         friendsListTable.data.forEach((item) => {
-            if (item.$selected)
+            if (item.$selected) {
+                console.log(`Unfriending ${item.displayName} (${item.id})`);
                 friendRequest.deleteFriend({ userId: item.id }).then((args) => handleFriendDelete(args));
+            }
         });
     }
 

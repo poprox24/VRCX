@@ -18,13 +18,14 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const vrcxStore = useVrcxStore();
     const VRCXUpdaterStore = useVRCXUpdaterStore();
 
-    const { t } = useI18n();
+    const { availableLocales, t } = useI18n();
 
     const state = reactive({
         folderSelectorDialogVisible: false
     });
 
     const enablePrimaryPassword = ref(false);
+    const bioLanguage = ref('en');
     const relaunchVRChatAfterCrash = ref(false);
     const vrcQuitFix = ref(true);
     const autoSweepVRChatCache = ref(false);
@@ -41,6 +42,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const screenshotHelperCopyToClipboard = ref(false);
     const youTubeApi = ref(false);
     const youTubeApiKey = ref('');
+    const translationApi = ref(false);
+    const translationApiKey = ref('');
     const progressPie = ref(false);
     const progressPieFilter = ref(true);
     const showConfirmationOnSwitchAvatar = ref(false);
@@ -49,7 +52,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const ugcFolderPath = ref('');
     const autoDeleteOldPrints = ref(false);
     const notificationOpacity = ref(100);
-    const currentUserInventory = ref(new Map());
+    const currentUserInventory = reactive(new Map());
     const isVRChatConfigDialogVisible = ref(false);
     const saveInstanceEmoji = ref(false);
     const vrcRegistryAutoBackup = ref(true);
@@ -59,7 +62,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     watch(
         () => watchState.isLoggedIn,
         () => {
-            currentUserInventory.value.clear();
+            currentUserInventory.clear();
             isVRChatConfigDialogVisible.value = false;
         },
         { flush: 'sync' }
@@ -68,6 +71,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     async function initAdvancedSettings() {
         const [
             enablePrimaryPasswordConfig,
+            bioLanguageConfig,
             relaunchVRChatAfterCrashConfig,
             vrcQuitFixConfig,
             autoSweepVRChatCacheConfig,
@@ -84,6 +88,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             screenshotHelperCopyToClipboardConfig,
             youTubeApiConfig,
             youTubeApiKeyConfig,
+            translationApiConfig,
+            translationApiKeyConfig,
             progressPieConfig,
             progressPieFilterConfig,
             showConfirmationOnSwitchAvatarConfig,
@@ -97,6 +103,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             sentryErrorReportingConfig
         ] = await Promise.all([
             configRepository.getBool('enablePrimaryPassword', false),
+            configRepository.getString('VRCX_bioLanguage'),
             configRepository.getBool('VRCX_relaunchVRChatAfterCrash', false),
             configRepository.getBool('VRCX_vrcQuitFix', true),
             configRepository.getBool('VRCX_autoSweepVRChatCache', false),
@@ -122,6 +129,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             ),
             configRepository.getBool('VRCX_youtubeAPI', false),
             configRepository.getString('VRCX_youtubeAPIKey', ''),
+            configRepository.getBool('VRCX_translationAPI', false),
+            configRepository.getString('VRCX_translationAPIKey', ''),
             configRepository.getBool('VRCX_progressPie', false),
             configRepository.getBool('VRCX_progressPieFilter', true),
             configRepository.getBool(
@@ -137,6 +146,15 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             configRepository.getBool('VRCX_vrcRegistryAskRestore', true),
             configRepository.getString('VRCX_SentryEnabled', '')
         ]);
+
+        if (
+            !bioLanguageConfig ||
+            !availableLocales.includes(bioLanguageConfig)
+        ) {
+            bioLanguage.value = 'en';
+        } else {
+            bioLanguage.value = bioLanguageConfig;
+        }
 
         enablePrimaryPassword.value = enablePrimaryPasswordConfig;
         relaunchVRChatAfterCrash.value = relaunchVRChatAfterCrashConfig;
@@ -158,6 +176,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             screenshotHelperCopyToClipboardConfig;
         youTubeApi.value = youTubeApiConfig;
         youTubeApiKey.value = youTubeApiKeyConfig;
+        translationApi.value = translationApiConfig;
+        translationApiKey.value = translationApiKeyConfig;
         progressPie.value = progressPieConfig;
         progressPieFilter.value = progressPieFilterConfig;
         showConfirmationOnSwitchAvatar.value =
@@ -299,6 +319,10 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         youTubeApi.value = !youTubeApi.value;
         await configRepository.setBool('VRCX_youtubeAPI', youTubeApi.value);
     }
+    async function setTranslationApi() {
+        translationApi.value = !translationApi.value;
+        await configRepository.setBool('VRCX_translationAPI', youTubeApi.value);
+    }
     /**
      * @param {string} value
      */
@@ -308,6 +332,17 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             'VRCX_youtubeAPIKey',
             youTubeApiKey.value
         );
+    }
+    async function setTranslationApiKey(value) {
+        translationApiKey.value = value;
+        await configRepository.setString(
+            'VRCX_translationAPIKey',
+            translationApiKey.value
+        );
+    }
+    function setBioLanguage(language) {
+        bioLanguage.value = language;
+        configRepository.setString('VRCX_bioLanguage', language);
     }
     async function setProgressPie() {
         progressPie.value = !progressPie.value;
@@ -432,12 +467,6 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             return;
         }
 
-        sentryErrorReporting.value = !sentryErrorReporting.value;
-        await configRepository.setString(
-            'VRCX_SentryEnabled',
-            sentryErrorReporting.value ? 'true' : 'false'
-        );
-
         ElMessageBox.confirm(
             'Error reporting setting has been disabled. Would you like to restart VRCX now for the change to take effect?',
             'Restart Required',
@@ -448,7 +477,12 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
                 center: true
             }
         )
-            .then(() => {
+            .then(async () => {
+                sentryErrorReporting.value = !sentryErrorReporting.value;
+                await configRepository.setString(
+                    'VRCX_SentryEnabled',
+                    sentryErrorReporting.value ? 'true' : 'false'
+                );
                 VRCXUpdaterStore.restartVRCX(false);
             })
             .catch(() => {});
@@ -514,7 +548,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
      * @param {string} videoId
      */
     async function lookupYouTubeVideo(videoId) {
-        if (!youTubeApi.value) {
+        if (!youTubeApiKey.value) {
             console.warn('no Youtube API key configured');
             return null;
         }
@@ -548,6 +582,48 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         return data;
     }
 
+    async function translateText(text, targetLang) {
+        if (!translationApiKey.value) {
+            ElMessage({
+                message: 'No Translation API key configured',
+                type: 'warning'
+            });
+            return null;
+        }
+
+        try {
+            const response = await webApiService.execute({
+                url: `https://translation.googleapis.com/language/translate/v2?key=${translationApiKey.value}`,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Referer: 'https://vrcx.app'
+                },
+                body: JSON.stringify({
+                    q: text,
+                    target: targetLang,
+                    format: 'text'
+                })
+            });
+            if (response.status !== 200) {
+                throw new Error(
+                    `Translation API error: ${response.status} - ${response.data}`
+                );
+            }
+            const data = JSON.parse(response.data);
+            if (AppDebug.debugWebRequests) {
+                console.log(data, response);
+            }
+            return data.data.translations[0].translatedText;
+        } catch (err) {
+            ElMessage({
+                message: `Translation failed: ${err.message}`,
+                type: 'error'
+            });
+            return null;
+        }
+    }
+
     function cropPrintsChanged() {
         if (!cropInstancePrints.value) return;
         ElMessageBox.confirm(
@@ -564,30 +640,32 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
                 type: 'info',
                 showInput: false
             }
-        ).then(async ({ action }) => {
-            if (action === 'confirm') {
-                const msgBox = ElMessage({
-                    message: 'Batch print cropping in progress...',
-                    type: 'warning',
-                    duration: 0
-                });
-                try {
-                    await AppApi.CropAllPrints(ugcFolderPath.value);
-                    ElMessage({
-                        message: 'Batch print cropping complete',
-                        type: 'success'
+        )
+            .then(async ({ action }) => {
+                if (action === 'confirm') {
+                    const msgBox = ElMessage({
+                        message: 'Batch print cropping in progress...',
+                        type: 'warning',
+                        duration: 0
                     });
-                } catch (err) {
-                    console.error(err);
-                    ElMessage({
-                        message: `Batch print cropping failed: ${err}`,
-                        type: 'error'
-                    });
-                } finally {
-                    msgBox.close();
+                    try {
+                        await AppApi.CropAllPrints(ugcFolderPath.value);
+                        ElMessage({
+                            message: 'Batch print cropping complete',
+                            type: 'success'
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        ElMessage({
+                            message: `Batch print cropping failed: ${err}`,
+                            type: 'error'
+                        });
+                    } finally {
+                        msgBox.close();
+                    }
                 }
-            }
-        });
+            })
+            .catch(() => {});
     }
 
     function askDeleteAllScreenshotMetadata() {
@@ -605,11 +683,13 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
                 type: 'warning',
                 showInput: false
             }
-        ).then(({ action }) => {
-            if (action === 'confirm') {
-                deleteAllScreenshotMetadata();
-            }
-        });
+        )
+            .then(({ action }) => {
+                if (action === 'confirm') {
+                    deleteAllScreenshotMetadata();
+                }
+            })
+            .catch(() => {});
     }
 
     function deleteAllScreenshotMetadata() {
@@ -627,30 +707,32 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
                 type: 'warning',
                 showInput: false
             }
-        ).then(async ({ action }) => {
-            if (action === 'confirm') {
-                const msgBox = ElMessage({
-                    message: 'Batch metadata removal in progress...',
-                    type: 'warning',
-                    duration: 0
-                });
-                try {
-                    await AppApi.DeleteAllScreenshotMetadata();
-                    ElMessage({
-                        message: 'Batch metadata removal complete',
-                        type: 'success'
+        )
+            .then(async ({ action }) => {
+                if (action === 'confirm') {
+                    const msgBox = ElMessage({
+                        message: 'Batch metadata removal in progress...',
+                        type: 'warning',
+                        duration: 0
                     });
-                } catch (err) {
-                    console.error(err);
-                    ElMessage({
-                        message: `Batch metadata removal failed: ${err}`,
-                        type: 'error'
-                    });
-                } finally {
-                    msgBox.close();
+                    try {
+                        await AppApi.DeleteAllScreenshotMetadata();
+                        ElMessage({
+                            message: 'Batch metadata removal complete',
+                            type: 'success'
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        ElMessage({
+                            message: `Batch metadata removal failed: ${err}`,
+                            type: 'error'
+                        });
+                    } finally {
+                        msgBox.close();
+                    }
                 }
-            }
-        });
+            })
+            .catch(() => {});
     }
 
     function resetUGCFolder() {
@@ -728,6 +810,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     return {
         state,
 
+        bioLanguage,
         enablePrimaryPassword,
         relaunchVRChatAfterCrash,
         vrcQuitFix,
@@ -744,7 +827,9 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         screenshotHelperModifyFilename,
         screenshotHelperCopyToClipboard,
         youTubeApi,
+        translationApi,
         youTubeApiKey,
+        translationApiKey,
         progressPie,
         progressPieFilter,
         showConfirmationOnSwitchAvatar,
@@ -761,6 +846,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         sentryErrorReporting,
 
         setEnablePrimaryPasswordConfigRepository,
+        setBioLanguage,
         setRelaunchVRChatAfterCrash,
         setVrcQuitFix,
         setAutoSweepVRChatCache,
@@ -776,7 +862,9 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         setScreenshotHelperModifyFilename,
         setScreenshotHelperCopyToClipboard,
         setYouTubeApi,
+        setTranslationApi,
         setYouTubeApiKey,
+        setTranslationApiKey,
         setProgressPie,
         setProgressPieFilter,
         setShowConfirmationOnSwitchAvatar,
@@ -788,6 +876,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         getSqliteTableSizes,
         handleSetAppLauncherSettings,
         lookupYouTubeVideo,
+        translateText,
         resetUGCFolder,
         openUGCFolder,
         openUGCFolderSelector,

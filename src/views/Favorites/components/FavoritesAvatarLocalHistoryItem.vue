@@ -1,5 +1,5 @@
 <template>
-    <div @click="$emit('click')">
+    <div>
         <div class="x-friend-item">
             <div class="avatar">
                 <img :src="smallThumbnail" loading="lazy" />
@@ -8,7 +8,7 @@
                 <span class="name" v-text="favorite.name"></span>
                 <span class="extra" v-text="favorite.authorName"></span>
             </div>
-            <el-tooltip placement="left" :content="t('view.favorite.select_avatar_tooltip')">
+            <el-tooltip placement="left" :content="t('view.favorite.select_avatar_tooltip')" :teleported="false">
                 <el-button
                     :disabled="currentUser.currentAvatar === favorite.id"
                     size="small"
@@ -17,8 +17,8 @@
                     style="margin-left: 5px"
                     @click.stop="selectAvatarWithConfirmation(favorite.id)"></el-button>
             </el-tooltip>
-            <template v-if="cachedFavoritesByObjectId.has(favorite.id)">
-                <el-tooltip placement="right" content="Favorite">
+            <template v-if="cachedFavoritesByObjectId(favorite.id)">
+                <el-tooltip placement="right" content="Favorite" :teleported="false">
                     <el-button
                         type="default"
                         :icon="Star"
@@ -29,7 +29,7 @@
                 </el-tooltip>
             </template>
             <template v-else>
-                <el-tooltip placement="right" content="Favorite">
+                <el-tooltip placement="right" content="Favorite" :teleported="false">
                     <el-button
                         type="default"
                         :icon="StarFilled"
@@ -53,8 +53,7 @@
 
     const { t } = useI18n();
 
-    const { cachedFavoritesByObjectId } = storeToRefs(useFavoriteStore());
-    const { showFavoriteDialog } = useFavoriteStore();
+    const { showFavoriteDialog, cachedFavoritesByObjectId } = useFavoriteStore();
     const { selectAvatarWithConfirmation } = useAvatarStore();
     const { currentUser } = storeToRefs(useUserStore());
 
@@ -68,6 +67,6 @@
     defineEmits(['click']);
 
     const smallThumbnail = computed(() => {
-        return props.favorite.thumbnailImageUrl.replace('256', '128') || props.favorite.thumbnailImageUrl;
+        return props.favorite.thumbnailImageUrl?.replace('256', '128') || props.favorite.thumbnailImageUrl;
     });
 </script>

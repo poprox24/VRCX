@@ -42,7 +42,7 @@
             <el-button size="small">
                 <span v-if="avatarExportLocalFavoriteGroup">
                     {{ avatarExportLocalFavoriteGroup }} ({{
-                        getLocalAvatarFavoriteGroupLength(avatarExportLocalFavoriteGroup)
+                        localAvatarFavGroupLength(avatarExportLocalFavoriteGroup)
                     }})
                     <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </span>
@@ -62,7 +62,7 @@
                         <el-dropdown-item
                             style="display: block; margin: 10px 0"
                             @click="selectAvatarExportLocalGroup(group)">
-                            {{ group }} ({{ getLocalAvatarFavoriteGroupLength(group) }})
+                            {{ group }} ({{ localAvatarFavGroupLength(group) }})
                         </el-dropdown-item>
                     </template>
                 </el-dropdown-menu>
@@ -102,14 +102,8 @@
     const emit = defineEmits(['update:avatarExportDialogVisible']);
 
     const favoriteStore = useFavoriteStore();
-    const {
-        favoriteAvatars,
-        favoriteAvatarGroups,
-        localAvatarFavorites,
-        localAvatarFavoritesList,
-        localAvatarFavoriteGroups
-    } = storeToRefs(favoriteStore);
-    const { getLocalAvatarFavoriteGroupLength } = favoriteStore;
+    const { favoriteAvatars, favoriteAvatarGroups, localAvatarFavorites } = storeToRefs(favoriteStore);
+    const { localAvatarFavGroupLength, localAvatarFavoritesList, localAvatarFavoriteGroups } = favoriteStore;
     const { cachedAvatars } = useAvatarStore();
 
     const avatarExportContent = ref('');
@@ -213,8 +207,8 @@
             favoriteAvatars.value.forEach((ref) => {
                 lines.push(resText(ref.ref));
             });
-            for (let i = 0; i < localAvatarFavoritesList.value.length; ++i) {
-                const avatarId = localAvatarFavoritesList.value[i];
+            for (let i = 0; i < localAvatarFavoritesList.length; ++i) {
+                const avatarId = localAvatarFavoritesList[i];
                 const ref = cachedAvatars.get(avatarId);
                 if (typeof ref !== 'undefined') {
                     lines.push(resText(ref));

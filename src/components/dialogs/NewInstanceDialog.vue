@@ -242,12 +242,17 @@
                             @change="buildLegacyInstance"></el-input>
                     </el-form-item>
                     <el-form-item
-                        v-if="newInstanceDialog.accessType !== 'public' && newInstanceDialog.accessType !== 'group'"
+                        v-if="
+                            newInstanceDialog.selectedTab === 'Legacy' &&
+                            newInstanceDialog.accessType !== 'public' &&
+                            newInstanceDialog.accessType !== 'group'
+                        "
                         :label="t('dialog.new_instance.instance_creator')">
                         <el-select
                             v-model="newInstanceDialog.userId"
                             clearable
                             :placeholder="t('dialog.new_instance.instance_creator_placeholder')"
+                            :persistent="false"
                             filterable
                             style="width: 100%"
                             @change="buildLegacyInstance">
@@ -413,7 +418,7 @@
                     @click="showInviteDialog(newInstanceDialog.location)"
                     >{{ t('dialog.new_instance.invite') }}</el-button
                 >
-                <template v-if="canOpenInstanceInGame()">
+                <template v-if="canOpenInstanceInGame">
                     <el-button @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)">{{
                         t('dialog.new_instance.launch')
                     }}</el-button>
@@ -450,7 +455,7 @@
                 @click="showInviteDialog(newInstanceDialog.location)"
                 >{{ t('dialog.new_instance.invite') }}</el-button
             >
-            <template v-if="canOpenInstanceInGame()">
+            <template v-if="canOpenInstanceInGame">
                 <el-button @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)">{{
                     t('dialog.new_instance.launch')
                 }}</el-button>
@@ -590,7 +595,7 @@
                 const friendsInCurrentInstance = lastLocation.value.friendList;
                 for (const friend of friendsInCurrentInstance.values()) {
                     const ctx = friends.value.get(friend.userId);
-                    if (typeof ctx.ref === 'undefined') {
+                    if (typeof ctx?.ref === 'undefined') {
                         continue;
                     }
                     D.friendsInInstance.push(ctx);

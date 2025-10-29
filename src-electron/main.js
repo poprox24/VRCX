@@ -120,7 +120,13 @@ let mainWindow = undefined;
 const VRCXStorage = interopApi.getDotNetObject('VRCXStorage');
 const hasAskedToMoveAppImage =
     VRCXStorage.Get('VRCX_HasAskedToMoveAppImage') === 'true';
-let isCloseToTray = VRCXStorage.Get('VRCX_CloseToTray') === 'true';
+
+function getCloseToTray() {
+    if (process.platform === 'darwin') {
+        return true;
+    }
+    return VRCXStorage.Get('VRCX_CloseToTray') === 'true';
+}
 
 const gotTheLock = app.requestSingleInstanceLock();
 const strip_vrcx_prefix_regex = new RegExp('^' + VRCX_URI_PREFIX + '://');
@@ -154,28 +160,6 @@ if (!gotTheLock) {
         }
     });
 }
-
-ipcMain.handle('getArch', () => {
-    return process.arch.toString();
-});
-
-ipcMain.handle('applyWindowSettings', (event, position, size, state) => {
-    if (position) {
-        mainWindow.setPosition(parseInt(position.x), parseInt(position.y));
-    }
-    if (size) {
-        mainWindow.setSize(parseInt(size.width), parseInt(size.height));
-    }
-    if (state) {
-        if (state === '0') {
-            mainWindow.restore();
-        } else if (state === '1') {
-            mainWindow.restore();
-        } else if (state === '2') {
-            mainWindow.maximize();
-        }
-    }
-});
 
 ipcMain.handle('dialog:openFile', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -272,6 +256,14 @@ ipcMain.handle(
     }
 );
 
+ipcMain.handle('app:getArch', () => {
+    return process.arch.toString();
+});
+
+ipcMain.handle('app:setTrayIconNotification', (event, notify) => {
+    setTrayIconNotification(notify);
+});
+
 function tryRelaunchWithArgs(args) {
     if (
         process.platform !== 'linux' ||
@@ -361,8 +353,7 @@ function createWindow() {
     mainWindow.webContents.setVisualZoomLevelLimits(1, 5);
 
     mainWindow.on('close', (event) => {
-        isCloseToTray = VRCXStorage.Get('VRCX_CloseToTray') === 'true';
-        if (isCloseToTray && !appIsQuitting) {
+        if (getCloseToTray() && !appIsQuitting) {
             event.preventDefault();
             mainWindow.hide();
         } else {
@@ -531,21 +522,35 @@ function destroyHmdOverlayWindow() {
     hmdOverlayWindow = undefined;
 }
 
+let tray = null;
+let trayIcon = null;
+let trayIconNotify = null;
 function createTray() {
-    let tray = null;
     if (process.platform === 'darwin') {
         const image = nativeImage.createFromPath(
             path.join(rootDir, 'images/VRCX.png')
         );
-        tray = new Tray(image.resize({ width: 16, height: 16 }));
+        trayIcon = image.resize({ width: 16, height: 16 });
+
+        const imageNotify = nativeImage.createFromPath(
+            path.join(rootDir, 'images/VRCX_notify.png')
+        );
+        trayIconNotify = imageNotify.resize({ width: 16, height: 16 });
     } else if (process.platform === 'linux') {
         const image = nativeImage.createFromPath(
             path.join(rootDir, 'images/VRCX.png')
         );
-        tray = new Tray(image.resize({ width: 64, height: 64 }));
+        trayIcon = image.resize({ width: 64, height: 64 });
+
+        const imageNotify = nativeImage.createFromPath(
+            path.join(rootDir, 'images/VRCX_notify.png')
+        );
+        trayIconNotify = imageNotify.resize({ width: 64, height: 64 });
     } else {
-        tray = new Tray(path.join(rootDir, 'images/VRCX.ico'));
+        trayIcon = path.join(rootDir, 'images/VRCX.ico');
+        trayIconNotify = path.join(rootDir, 'images/VRCX_notify.ico');
     }
+    tray = new Tray(trayIcon);
     const contextMenu = Menu.buildFromTemplate([
         {
             label: 'Open',
@@ -576,6 +581,10 @@ function createTray() {
     tray.on('click', () => {
         mainWindow.show();
     });
+}
+
+function setTrayIconNotification(notify) {
+    tray.setImage(notify ? trayIconNotify : trayIcon);
 }
 
 async function installVRCX() {
@@ -872,7 +881,7 @@ function tryCopyFromWinePrefix() {
 
 function applyWindowState() {
     if (VRCXStorage.Get('VRCX_StartAsMinimizedState') === 'true' && startup) {
-        if (isCloseToTray) {
+        if (getCloseToTray()) {
             mainWindow.hide();
             return;
         }
@@ -913,6 +922,11 @@ app.whenReady().then(() => {
     app.on('activate', function () {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
+        } else {
+            // Ensure main window shows when clicking Dock icon (critical for macOS)
+            if (mainWindow && !mainWindow.isVisible()) {
+                mainWindow.show();
+            }
         }
     });
 });
@@ -940,6 +954,8 @@ function disposeOverlay() {
 }
 
 app.on('before-quit', function () {
+    // Mark it as a quitting state to make macOS Dock's "Quit" action take effect.
+    appIsQuitting = true;
     disposeOverlay();
 });
 

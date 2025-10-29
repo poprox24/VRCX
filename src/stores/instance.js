@@ -73,13 +73,13 @@ export const useInstanceStore = defineStore('Instance', () => {
 
     const currentInstanceLocation = ref({});
 
-    const queuedInstances = ref(new Map());
+    const queuedInstances = reactive(new Map());
 
     const previousInstancesInfoDialogVisible = ref(false);
 
     const previousInstancesInfoDialogInstanceId = ref('');
 
-    const instanceJoinHistory = ref(new Map());
+    let instanceJoinHistory = reactive(new Map());
 
     const currentInstanceUsersData = ref([]);
     const currentInstanceUsersTable = computed(() => {
@@ -103,10 +103,10 @@ export const useInstanceStore = defineStore('Instance', () => {
         () => watchState.isLoggedIn,
         (isLoggedIn) => {
             currentInstanceUsersData.value = [];
-            instanceJoinHistory.value = new Map();
+            instanceJoinHistory.clear();
             previousInstancesInfoDialogVisible.value = false;
             cachedInstances.clear();
-            queuedInstances.value.clear();
+            queuedInstances.clear();
             if (isLoggedIn) {
                 getInstanceJoinHistory();
             }
@@ -115,7 +115,13 @@ export const useInstanceStore = defineStore('Instance', () => {
     );
 
     async function getInstanceJoinHistory() {
-        instanceJoinHistory.value = await database.getInstanceJoinHistory();
+        try {
+            instanceJoinHistory = reactive(
+                await database.getInstanceJoinHistory()
+            );
+        } catch (error) {
+            console.error('Failed to get instance join history:', error);
+        }
     }
 
     function addInstanceJoinHistory(location, dateTime) {
@@ -123,12 +129,12 @@ export const useInstanceStore = defineStore('Instance', () => {
             return;
         }
 
-        if (instanceJoinHistory.value.has(location)) {
-            instanceJoinHistory.value.delete(location);
+        if (instanceJoinHistory.has(location)) {
+            instanceJoinHistory.delete(location);
         }
 
         const epoch = new Date(dateTime).getTime();
-        instanceJoinHistory.value.set(location, epoch);
+        instanceJoinHistory.set(location, epoch);
     }
 
     function showPreviousInstancesInfoDialog(instanceId) {
@@ -364,7 +370,7 @@ export const useInstanceStore = defineStore('Instance', () => {
         }
         if (
             userStore.userDialog.visible &&
-            userStore.userDialog.ref.$location.tag === ref.id
+            userStore.userDialog.ref?.$location?.tag === ref.id
         ) {
             userStore.applyUserDialogLocation();
         }
@@ -883,14 +889,14 @@ export const useInstanceStore = defineStore('Instance', () => {
     }
 
     function removeAllQueuedInstances() {
-        queuedInstances.value.forEach((ref) => {
+        queuedInstances.forEach((ref) => {
             ElMessage({
                 message: `Removed instance ${ref.$worldName} from queue`,
                 type: 'info'
             });
             ref.$msgBox?.close();
         });
-        queuedInstances.value.clear();
+        queuedInstances.clear();
     }
 
     /**
@@ -898,10 +904,10 @@ export const useInstanceStore = defineStore('Instance', () => {
      * @param {string} instanceId
      */
     function removeQueuedInstance(instanceId) {
-        const ref = queuedInstances.value.get(instanceId);
+        const ref = queuedInstances.get(instanceId);
         if (typeof ref !== 'undefined') {
             ref.$msgBox.close();
-            queuedInstances.value.delete(instanceId);
+            queuedInstances.delete(instanceId);
         }
     }
 
@@ -910,7 +916,7 @@ export const useInstanceStore = defineStore('Instance', () => {
      * @param {string} instanceId
      */
     function applyQueuedInstance(instanceId) {
-        queuedInstances.value.forEach((ref) => {
+        queuedInstances.forEach((ref) => {
             if (ref.location !== instanceId) {
                 ElMessage({
                     message: t('message.instance.removed_form_queue', {
@@ -919,13 +925,13 @@ export const useInstanceStore = defineStore('Instance', () => {
                     type: 'info'
                 });
                 ref.$msgBox?.close();
-                queuedInstances.value.delete(ref.location);
+                queuedInstances.delete(ref.location);
             }
         });
         if (!instanceId) {
             return;
         }
-        if (!queuedInstances.value.has(instanceId)) {
+        if (!queuedInstances.has(instanceId)) {
             const L = parseLocation(instanceId);
             if (L.isRealInstance) {
                 instanceRequest
@@ -958,10 +964,10 @@ export const useInstanceStore = defineStore('Instance', () => {
      * @param {string} instanceId
      */
     function instanceQueueReady(instanceId) {
-        const ref = queuedInstances.value.get(instanceId);
+        const ref = queuedInstances.get(instanceId);
         if (typeof ref !== 'undefined') {
             ref.$msgBox.close();
-            queuedInstances.value.delete(instanceId);
+            queuedInstances.delete(instanceId);
         }
         const L = parseLocation(instanceId);
         const group = groupStore.cachedGroups.get(L.groupId);
@@ -1002,7 +1008,7 @@ export const useInstanceStore = defineStore('Instance', () => {
      * @returns {Promise<void>}
      */
     async function instanceQueueUpdate(instanceId, position, queueSize) {
-        let ref = queuedInstances.value.get(instanceId);
+        let ref = queuedInstances.get(instanceId);
         if (typeof ref === 'undefined') {
             ref = {
                 $msgBox: null,
@@ -1036,7 +1042,7 @@ export const useInstanceStore = defineStore('Instance', () => {
             showClose: true,
             customClass: 'vrc-instance-queue-message'
         });
-        queuedInstances.value.set(instanceId, ref);
+        queuedInstances.set(instanceId, ref);
         // workerTimers.setTimeout(this.instanceQueueTimeout, 3600000);
     }
 
@@ -1076,6 +1082,7 @@ export const useInstanceStore = defineStore('Instance', () => {
             let isMuted = false;
             let isAvatarInteractionDisabled = false;
             let isChatBoxMuted = false;
+            let ageVerified = false;
             photonStore.photonLobbyCurrent.forEach((ref1, id) => {
                 if (typeof ref1 !== 'undefined') {
                     if (
@@ -1137,6 +1144,7 @@ export const useInstanceStore = defineStore('Instance', () => {
                 isAvatarInteractionDisabled =
                     ref.$moderations.isAvatarInteractionDisabled;
                 isChatBoxMuted = ref.$moderations.isChatBoxMuted;
+                ageVerified = ref.ageVerificationStatus === '18+';
             }
             users.push({
                 ref,
@@ -1149,7 +1157,12 @@ export const useInstanceStore = defineStore('Instance', () => {
                 inVRMode,
                 groupOnNameplate,
                 isFriend,
-                timeoutTime
+                timeoutTime,
+                isBlocked,
+                isMuted,
+                isAvatarInteractionDisabled,
+                isChatBoxMuted,
+                ageVerified
             });
             // get block, mute
         };
@@ -1196,9 +1209,9 @@ export const useInstanceStore = defineStore('Instance', () => {
 
     // $app.methods.instanceQueueClear = function () {
     //     // remove all instances from queue
-    //     queuedInstances.value.forEach((ref) => {
+    //     queuedInstances.forEach((ref) => {
     //         ref.$msgBox.close();
-    //         queuedInstances.value.delete(ref.location);
+    //         queuedInstances.delete(ref.location);
     //     });
     // };
 
