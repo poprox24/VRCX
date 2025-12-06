@@ -1,9 +1,6 @@
 <template>
-    <div
-        id="x-app"
-        class="x-app x-app-type"
-        :class="{ background: appType === 'wrist' && config && config.backgroundEnabled }">
-        <template v-if="appType === 'wrist'">
+    <div id="x-app" class="x-app x-app-type">
+        <div class="wrist" :class="{ background: config && config.backgroundEnabled }">
             <div class="x-container" style="flex: 1">
                 <div class="x-friend-list" ref="list" style="color: #aaa">
                     <template v-if="config && config.minimalFeed">
@@ -1279,9 +1276,9 @@
                 <span style="display: inline-block">{{ t('vr.status.online') }} {{ onlineFriendCount }}</span>
                 <span style="display: inline-block; margin-left: 5px">{{ customInfo }}</span>
             </div>
-        </template>
+        </div>
         <!-- HMD Overlay -->
-        <template v-else>
+        <div class="hmd">
             <svg class="np-progress-circle">
                 <circle
                     class="np-progress-circle-stroke"
@@ -1402,7 +1399,7 @@
                         d="M102.9,75l11.3-11.3c10.3-10.3,11.5-26.1,3.8-37.8l17.4-17.4L126.9,0l-17.4,17.4C97.9,9.7,82,11,71.8,21.2L60.5,32.5C102,74,60.8,32.9,102.9,75z"></path>
                 </svg>
             </div>
-        </template>
+        </div>
     </div>
 </template>
 
@@ -1434,7 +1431,6 @@
     const { t } = i18n;
 
     const vrState = reactive({
-        appType: new URLSearchParams(window.location.search).has('wrist') ? 'wrist' : 'hmd',
         appLanguage: 'en',
         currentCulture: 'en-gb',
         currentTime: new Date().toJSON(),
@@ -1503,10 +1499,8 @@
         if (LINUX) {
             updateVrElectronLoop();
         }
-        if (vrState.appType === 'wrist') {
-            refreshCustomScript();
-            updateStatsLoop();
-        }
+        refreshCustomScript();
+        updateStatsLoop();
         setDatetimeFormat();
 
         nextTick(() => {
@@ -1541,19 +1535,17 @@
 
     function nowPlayingUpdate(json) {
         vrState.nowPlaying = JSON.parse(json);
-        if (vrState.appType === 'hmd') {
-            const circle = /** @type {SVGCircleElement} */ (document.querySelector('.np-progress-circle-stroke'));
+        const circle = /** @type {SVGCircleElement} */ (document.querySelector('.np-progress-circle-stroke'));
 
-            if (vrState.lastLocation.progressPie && vrState.nowPlaying.percentage !== 0) {
-                circle.style.opacity = (0.5).toString();
-                const circumference = circle.getTotalLength();
-                circle.style.strokeDashoffset = (
-                    circumference -
-                    (vrState.nowPlaying.percentage / 100) * circumference
-                ).toString();
-            } else {
-                circle.style.opacity = '0';
-            }
+        if (vrState.lastLocation.progressPie && vrState.nowPlaying.percentage !== 0) {
+            circle.style.opacity = (0.5).toString();
+            const circumference = circle.getTotalLength();
+            circle.style.strokeDashoffset = (
+                circumference -
+                (vrState.nowPlaying.percentage / 100) * circumference
+            ).toString();
+        } else {
+            circle.style.opacity = '0';
         }
         updateFeedLength();
     }
@@ -1568,7 +1560,7 @@
     }
 
     function updateFeedLength() {
-        if (vrState.appType === 'hmd' || vrState.wristFeed.length === 0) {
+        if (vrState.wristFeed.length === 0) {
             return;
         }
         let length = 16;
@@ -1705,36 +1697,33 @@
 
     async function updateVrElectronLoop() {
         try {
-            if (vrState.appType === 'wrist') {
-                const wristOverlayQueue = await AppApiVr.GetExecuteVrFeedFunctionQueue();
-                if (wristOverlayQueue) {
-                    wristOverlayQueue.forEach((item) => {
-                        // item[0] is the function name, item[1] is already an object
-                        const fullFunctionName = item[0];
-                        const jsonArg = item[1];
+            const wristOverlayQueue = await AppApiVr.GetExecuteVrFeedFunctionQueue();
+            if (wristOverlayQueue) {
+                wristOverlayQueue.forEach((item) => {
+                    // item[0] is the function name, item[1] is already an object
+                    const fullFunctionName = item[0];
+                    const jsonArg = item[1];
 
-                        if (typeof window.$vr === 'object' && typeof window.$vr[fullFunctionName] === 'function') {
-                            window.$vr[fullFunctionName](jsonArg);
-                        } else {
-                            console.error(`$vr.${fullFunctionName} is not defined or is not a function`);
-                        }
-                    });
-                }
-            } else {
-                const hmdOverlayQueue = await AppApiVr.GetExecuteVrOverlayFunctionQueue();
-                if (hmdOverlayQueue) {
-                    hmdOverlayQueue.forEach((item) => {
-                        // item[0] is the function name, item[1] is already an object
-                        const fullFunctionName = item[0];
-                        const jsonArg = item[1];
+                    if (typeof window.$vr === 'object' && typeof window.$vr[fullFunctionName] === 'function') {
+                        window.$vr[fullFunctionName](jsonArg);
+                    } else {
+                        console.error(`$vr.${fullFunctionName} is not defined or is not a function`);
+                    }
+                });
+            }
+            const hmdOverlayQueue = await AppApiVr.GetExecuteVrOverlayFunctionQueue();
+            if (hmdOverlayQueue) {
+                hmdOverlayQueue.forEach((item) => {
+                    // item[0] is the function name, item[1] is already an object
+                    const fullFunctionName = item[0];
+                    const jsonArg = item[1];
 
-                        if (typeof window.$vr === 'object' && typeof window.$vr[fullFunctionName] === 'function') {
-                            window.$vr[fullFunctionName](jsonArg);
-                        } else {
-                            console.error(`$vr.${fullFunctionName} is not defined or is not a function`);
-                        }
-                    });
-                }
+                    if (typeof window.$vr === 'object' && typeof window.$vr[fullFunctionName] === 'function') {
+                        window.$vr[fullFunctionName](jsonArg);
+                    } else {
+                        console.error(`$vr.${fullFunctionName} is not defined or is not a function`);
+                    }
+                });
             }
         } catch (err) {
             console.error(err);
@@ -2039,7 +2028,6 @@
     }
 
     const {
-        appType,
         config,
         wristFeed,
         devices,
