@@ -178,21 +178,6 @@ namespace VRCX
                 Buffer.BlockCopy(tempRow, 0, imageData, bottomIndex, stride);
             }
         }
-        
-        private static void CropImage(ref byte[] sourceImage, int sourceWidth, int sourceHeight,
-            ref byte[] destImage, int destWidth, int destHeight)
-        {
-            int sourceStride = sourceWidth * 4; // 4 bytes per pixel (RGBA)
-            int destStride = destWidth * 4;
-
-            for (int y = 0; y < destHeight; y++)
-            {
-                int sourceY = y;
-                if (sourceY >= sourceHeight) break;
-
-                Buffer.BlockCopy(sourceImage, sourceY * sourceStride, destImage, y * destStride, destStride);
-            }
-        }
 
         private void ThreadLoop()
         {
