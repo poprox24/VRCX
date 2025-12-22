@@ -423,7 +423,7 @@
         randomUserColours,
         trustColor,
         notificationIconDot,
-        tablePageSizes
+        tablePageSizes,
         compactTableMode
     } = storeToRefs(appearanceSettingsStore);
 
@@ -450,7 +450,7 @@
         changeAppLanguage,
         promptMaxTableSizeDialog,
         setNotificationIconDot,
-        setTablePageSizes
+        setTablePageSizes,
         setCompactTableMode
     } = appearanceSettingsStore;
 

@@ -85,8 +85,9 @@
 
     const { data, currentPage, pageSize, tableProps, paginationProps, filters } = toRefs(props);
     const mergedTableProps = computed(() => ({
-        ...tableProps.value,
         stripe: false,
+        ...tableProps.value,
+
         // pagination height 48px
         height: tableProps.value.height - 48 || null
     }));
@@ -215,11 +216,6 @@
         }
         return false;
     };
-
-    const mergedTableProps = computed(() => ({
-        stripe: true,
-        ...tableProps.value
-    }));
 
     const mergedPaginationProps = computed(() => ({
         layout: 'sizes, prev, pager, next, total',
