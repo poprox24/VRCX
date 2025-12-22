@@ -4,7 +4,7 @@
         class="x-dialog x-world-dialog"
         v-model="isDialogVisible"
         :show-close="false"
-        width="770px">
+        width="930px">
         <div v-loading="worldDialog.loading">
             <div style="display: flex">
                 <img
@@ -204,11 +204,7 @@
                                 style="margin-left: 5px"
                                 @click="worldDialogCommand('Add Favorite')" />
                         </el-tooltip>
-                        <el-dropdown
-                            trigger="click"
-                            size="small"
-                            style="margin-left: 5px"
-                            @command="worldDialogCommand">
+                        <el-dropdown trigger="click" style="margin-left: 5px" @command="worldDialogCommand">
                             <el-button type="default" :icon="MoreFilled" size="large" circle />
                             <template #dropdown>
                                 <el-dropdown-menu>
@@ -302,7 +298,10 @@
                                             command="Delete Persistent Data">
                                             {{ t('dialog.world.actions.delete_persistent_data') }}
                                         </el-dropdown-item>
-                                        <el-dropdown-item :icon="Delete" command="Delete" style="color: #f56c6c">
+                                        <el-dropdown-item
+                                            :icon="Delete"
+                                            command="Delete"
+                                            style="color: var(--el-color-danger)">
                                             {{ t('dialog.world.actions.delete') }}
                                         </el-dropdown-item>
                                     </template>

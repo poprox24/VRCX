@@ -21,7 +21,7 @@
                     @click="userDialogCommand('Add Favorite')"></el-button>
             </el-tooltip>
         </template>
-        <el-dropdown trigger="click" size="small" @command="onCommand">
+        <el-dropdown trigger="click" @command="onCommand">
             <el-button
                 :type="
                     userDialog.incomingRequest || userDialog.outgoingRequest
@@ -135,7 +135,7 @@
                             :icon="CircleCheck"
                             command="Moderation Unblock"
                             divided
-                            style="color: #f56c6c">
+                            style="color: var(--el-color-danger)">
                             {{ t('dialog.user.actions.moderation_unblock') }}
                         </el-dropdown-item>
                         <el-dropdown-item
@@ -150,7 +150,7 @@
                             v-if="userDialog.isMute"
                             :icon="Microphone"
                             command="Moderation Unmute"
-                            style="color: #f56c6c">
+                            style="color: var(--el-color-danger)">
                             {{ t('dialog.user.actions.moderation_unmute') }}
                         </el-dropdown-item>
                         <el-dropdown-item
@@ -164,7 +164,7 @@
                             v-if="userDialog.isMuteChat"
                             :icon="ChatLineRound"
                             command="Moderation Enable Chatbox"
-                            style="color: #f56c6c">
+                            style="color: var(--el-color-danger)">
                             {{ t('dialog.user.actions.moderation_enable_chatbox') }}
                         </el-dropdown-item>
                         <el-dropdown-item v-else :icon="ChatDotRound" command="Moderation Disable Chatbox">
@@ -182,7 +182,7 @@
                             v-if="userDialog.isInteractOff"
                             :icon="Pointer"
                             command="Moderation Enable Avatar Interaction"
-                            style="color: #f56c6c">
+                            style="color: var(--el-color-danger)">
                             {{ t('dialog.user.actions.moderation_enable_avatar_interaction') }}
                         </el-dropdown-item>
                         <el-dropdown-item v-else :icon="CircleClose" command="Moderation Disable Avatar Interaction">
@@ -192,7 +192,11 @@
                             {{ t('dialog.user.actions.report_hacking') }}
                         </el-dropdown-item>
                         <template v-if="userDialog.isFriend">
-                            <el-dropdown-item :icon="Delete" command="Unfriend" divided style="color: #f56c6c">
+                            <el-dropdown-item
+                                :icon="Delete"
+                                command="Unfriend"
+                                divided
+                                style="color: var(--el-color-danger)">
                                 {{ t('dialog.user.actions.unfriend') }}
                             </el-dropdown-item>
                         </template>
