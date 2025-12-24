@@ -4,17 +4,16 @@
         <div v-show="text" class="flex items-center">
             <div v-if="region" :class="['flags', 'mr-1.5', region]"></div>
             <NativeTooltip
-                class="min-w-0"
                 :content="`${t('dialog.new_instance.instance_id')}: #${instanceName}`"
                 :disabled="!instanceName"
                 :show-after="300"
                 placement="top">
                 <div
                     :class="{ 'x-link': link && location !== 'private' && location !== 'offline' }"
-                    class="inline-flex min-w-0 flex-wrap items-center"
+                    class="inline-flex min-w-0 flex-nowrap items-center overflow-hidden"
                     @click="handleShowWorldDialog">
                     <el-icon :class="['is-loading']" class="mr-1" v-if="isTraveling"><Loading /></el-icon>
-                    <span class="min-w-0 break-words">{{ text }}</span>
+                    <span class="min-w-0 truncate">{{ text }}</span>
                     <span
                         v-if="groupName"
                         class="ml-0.5 whitespace-nowrap"
