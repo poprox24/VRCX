@@ -4,21 +4,26 @@
         <div v-show="text" class="flex items-center">
             <div v-if="region" :class="['flags', 'mr-1.5', region]"></div>
             <NativeTooltip
+                class="min-w-0"
                 :content="`${t('dialog.new_instance.instance_id')}: #${instanceName}`"
                 :disabled="!instanceName"
                 :show-after="300"
                 placement="top">
                 <div
                     :class="{ 'x-link': link && location !== 'private' && location !== 'offline' }"
-                    class="inline-flex items-center"
+                    class="inline-flex min-w-0 flex-wrap items-center"
                     @click="handleShowWorldDialog">
                     <el-icon :class="['is-loading']" class="mr-1" v-if="isTraveling"><Loading /></el-icon>
-                    <div>{{ text }}</div>
+                    <span class="min-w-0 break-words">{{ text }}</span>
+                    <span
+                        v-if="groupName"
+                        class="ml-0.5 whitespace-nowrap"
+                        :class="{ 'x-link': link }"
+                        @click.stop="handleShowGroupDialog">
+                        ({{ groupName }})
+                    </span>
                 </div>
             </NativeTooltip>
-            <div v-if="groupName" class="ml-0.5" :class="{ 'x-link': link }" @click="handleShowGroupDialog">
-                ({{ groupName }})
-            </div>
             <NativeTooltip v-if="isClosed" :content="t('dialog.user.info.instance_closed')">
                 <el-icon :class="['inline-block', 'ml-5']" style="color: lightcoral"><WarnTriangleFilled /></el-icon>
             </NativeTooltip>

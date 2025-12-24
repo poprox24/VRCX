@@ -166,7 +166,6 @@
                             v-else
                             @click="deleteGameLogEntryPrompt(scope.row)"></i>
                     </template>
-                    <<<<<<< HEAD
                     <NativeTooltip placement="top" :content="t('dialog.previous_instances.info')">
                         <el-button
                             v-if="scope.row.type === 'Location'"
@@ -176,7 +175,6 @@
                             class="small-button"
                             @click="showPreviousInstancesInfoDialog(scope.row.location)"></el-button>
                     </NativeTooltip>
-                    =======
                     <el-tooltip placement="top" :content="t('dialog.previous_instances.info')">
                         <i
                             v-if="scope.row.type === 'Location'"
@@ -184,7 +182,6 @@
                             class="ri-file-list-2-line small-button"
                             @click="showPreviousInstancesInfoDialog(scope.row.location)"></i>
                     </el-tooltip>
-                    >>>>>>> 24da26252 (wip)
                 </template>
             </el-table-column>
             <el-table-column width="5"></el-table-column>

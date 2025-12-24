@@ -85,8 +85,8 @@
 
     const { data, currentPage, pageSize, tableProps, paginationProps, filters } = toRefs(props);
     const mergedTableProps = computed(() => ({
-        stripe: false,
         ...tableProps.value,
+        stripe: false,
 
         // pagination height 48px
         height: tableProps.value.height - 48 || null
