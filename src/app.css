@@ -130,7 +130,7 @@ body {
     --el-text-color-regular: var(--color-zinc-800);
 
     --el-border-color-hover: var(--color-zinc-300);
-    --el-input-focus-border-color: var(--el-color-primary);
+    --el-input-focus-border-color: var(--color-zinc-300);
 
     --el-disabled-bg-color: var(--color-zinc-100);
     --el-disabled-text-color: var(--color-zinc-400);
@@ -167,6 +167,7 @@ html.dark,
     --el-border-color-dark: var(--color-zinc-700);
     --el-border-color-darker: var(--color-zinc-600);
     --el-border-color-hover: var(--color-zinc-700);
+    --el-input-focus-border-color: var(--color-zinc-600);
 
     --el-fill-color: var(--color-zinc-900);
     --el-fill-color-light: var(--color-zinc-900);
@@ -309,8 +310,8 @@ body {
 .el-select__wrapper:focus-within,
 .el-button:focus-visible {
     border-color: var(--el-input-focus-border-color);
-    box-shadow: 0 0 0 3px
-        color-mix(in oklch, var(--el-color-primary) 22%, transparent);
+    box-shadow: 0 0 0 1px
+        color-mix(in oklch, var(--el-input-focus-border-color) 70%, transparent);
 }
 
 .el-table td.el-table__cell,
@@ -550,22 +551,19 @@ html.dark .el-overlay,
     --x-popper-border-color: var(--el-border-color-light);
     --x-popper-text-color: var(--el-text-color-regular);
     --x-popper-shadow: var(--el-box-shadow-light);
+    --x-tooltip-border-color: var(--color-zinc-700);
 
     --el-popover-bg-color: var(--x-popper-bg);
     --el-popover-border-color: var(--x-popper-border-color);
-    --el-tooltip-bg-color: color-mix(
-        in oklch,
-        var(--x-popper-bg) 92%,
-        var(--el-text-color-primary) 8%
-    );
-    --el-tooltip-text-color: var(--x-popper-text-color);
+    --el-tooltip-bg-color: var(--color-zinc-900);
+    --el-tooltip-text-color: var(--color-zinc-100);
 }
 
 /* Tooltip */
 .el-tooltip__popper,
 .el-popper[role='tooltip'] {
     background: var(--el-tooltip-bg-color) !important;
-    border: 1px solid var(--x-popper-border-color) !important;
+    border: 1px solid var(--x-tooltip-border-color) !important;
     color: var(--el-tooltip-text-color) !important;
     box-shadow: var(--x-popper-shadow) !important;
     border-radius: var(--el-border-radius-base);
@@ -585,13 +583,21 @@ html.dark .el-overlay,
 .el-tooltip__popper .el-popper__arrow::before,
 .el-popper[role='tooltip'] .el-popper__arrow::before {
     background: var(--el-tooltip-bg-color);
-    border: 1px solid var(--x-popper-border-color);
+    border: 1px solid var(--x-tooltip-border-color);
 }
 .el-popover .el-popper__arrow::before,
 .el-popover.el-popper .el-popper__arrow::before,
 .el-popper[role='dialog'] .el-popper__arrow::before {
     background: var(--x-popper-bg);
     border: 1px solid var(--x-popper-border-color);
+}
+
+.el-select__popper .el-select-dropdown,
+.el-dropdown__popper .el-dropdown-menu,
+.el-popper[role='listbox'] {
+    background: var(--color-white) !important;
+    border: 1px solid var(--color-zinc-100) !important;
+    color: var(--color-zinc-900) !important;
 }
 
 html {
