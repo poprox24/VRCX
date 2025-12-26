@@ -59,7 +59,6 @@ export default defineConfig(() => ({
     build: {
         target: 'chrome140',
         outDir: '../build/html',
-        cssMinify: 'lightningcss',
         license: true,
         emptyOutDir: true,
         reportCompressedSize: false,

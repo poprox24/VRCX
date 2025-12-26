@@ -84,6 +84,13 @@
     const vrcxStore = useVrcxStore();
 
     const { data, currentPage, pageSize, tableProps, paginationProps, filters } = toRefs(props);
+    const mergedTableProps = computed(() => ({
+        ...tableProps.value,
+        stripe: false,
+
+        // pagination height 48px
+        height: tableProps.value.height - 48 || null
+    }));
 
     const internalCurrentPage = ref(currentPage.value);
     const internalPageSize = ref(pageSize.value);
@@ -209,11 +216,6 @@
         }
         return false;
     };
-
-    const mergedTableProps = computed(() => ({
-        stripe: true,
-        ...tableProps.value
-    }));
 
     const mergedPaginationProps = computed(() => ({
         layout: 'sizes, prev, pager, next, total',
@@ -410,9 +412,10 @@
 
 <style scoped>
     .data-table-wrapper {
-        margin: 0 3px;
+        font-feature-settings:
+            'tnum' 1,
+            'lnum' 1;
     }
-
     .pagination-wrapper {
         margin-top: 16px;
         display: flex;

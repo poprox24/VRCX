@@ -4,7 +4,7 @@
         class="x-dialog x-avatar-dialog"
         v-model="avatarDialog.visible"
         :show-close="false"
-        width="700px">
+        width="930px">
         <div v-loading="avatarDialog.loading">
             <div style="display: flex">
                 <img
@@ -246,11 +246,7 @@
                                 style="margin-left: 5px"
                                 @click="selectAvatarWithoutConfirmation(avatarDialog.id)"></el-button>
                         </el-tooltip>
-                        <el-dropdown
-                            trigger="click"
-                            size="small"
-                            style="margin-left: 5px"
-                            @command="avatarDialogCommand">
+                        <el-dropdown trigger="click" style="margin-left: 5px" @command="avatarDialogCommand">
                             <el-button
                                 :type="avatarDialog.isBlocked ? 'danger' : 'default'"
                                 :icon="MoreFilled"

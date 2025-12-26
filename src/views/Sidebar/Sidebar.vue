@@ -57,9 +57,7 @@
             <el-tab-pane>
                 <template #label>
                     <span>{{ t('side_panel.friends') }}</span>
-                    <span style="color: #909399; font-size: 12px; margin-left: 10px">
-                        ({{ onlineFriendCount }}/{{ friends.size }})
-                    </span>
+                    <span class="sidebar-tab-count"> ({{ onlineFriendCount }}/{{ friends.size }}) </span>
                 </template>
                 <el-backtop target=".zero-margin-tabs .el-tabs__content" :bottom="20" :right="20"></el-backtop>
                 <FriendsSidebar @confirm-delete-friend="confirmDeleteFriend" />
@@ -67,9 +65,7 @@
             <el-tab-pane lazy>
                 <template #label>
                     <span>{{ t('side_panel.groups') }}</span>
-                    <span style="color: #909399; font-size: 12px; margin-left: 10px">
-                        ({{ groupInstances.length }})
-                    </span>
+                    <span class="sidebar-tab-count"> ({{ groupInstances.length }}) </span>
                 </template>
                 <GroupsSidebar :group-instances="groupInstances" :group-order="inGameGroupOrder" />
             </el-tab-pane>
@@ -97,11 +93,17 @@
 </script>
 
 <style scoped>
+    .sidebar-tab-count {
+        color: var(--el-text-color-secondary);
+        font-size: 12px;
+        margin-left: 10px;
+    }
+
     .group-calendar-button {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
+        box-shadow: var(--el-box-shadow-lighter);
         border: none;
         z-index: 5;
         width: 40px;

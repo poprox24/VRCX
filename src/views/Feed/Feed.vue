@@ -1,5 +1,5 @@
 <template>
-    <div class="x-container feed">
+    <div class="x-container feed" ref="feedRef">
         <div style="margin: 0 0 10px; display: flex; align-items: center">
             <div style="flex: none; margin-right: 10px; display: flex; align-items: center">
                 <NativeTooltip
@@ -7,7 +7,10 @@
                     :content="t('view.feed.favorites_only_tooltip')"
                     :enter-ms="140"
                     :exit-ms="120">
-                    <el-switch v-model="feedTable.vip" active-color="#13ce66" @change="feedTableLookup"></el-switch>
+                    <el-switch
+                        v-model="feedTable.vip"
+                        active-color="var(--el-color-success)"
+                        @change="feedTableLookup"></el-switch>
                 </NativeTooltip>
             </div>
             <el-select
@@ -33,7 +36,7 @@
         </div>
 
         <DataTable v-bind="feedTable">
-            <el-table-column type="expand" width="20">
+            <el-table-column type="expand" width="30">
                 <template #default="scope">
                     <div style="position: relative; font-size: 14px">
                         <template v-if="scope.row.type === 'GPS'">
@@ -45,9 +48,7 @@
                                 timeToText(scope.row.time)
                             }}</el-tag>
                             <br />
-                            <span style="margin-right: 5px">
-                                <el-icon><Right /></el-icon>
-                            </span>
+                            <span style="margin-right: 5px"> → </span>
                             <Location
                                 v-if="scope.row.location"
                                 :location="scope.row.location"
@@ -91,7 +92,7 @@
                                     </template>
                                 </div>
                                 <span style="position: relative; margin: 0 10px">
-                                    <el-icon><Right /></el-icon>
+                                    {{ ' → ' }}
                                 </span>
 
                                 <div style="display: inline-block; vertical-align: top; width: 160px">
@@ -116,9 +117,7 @@
                             <i class="x-user-status" :class="statusClass(scope.row.previousStatus)"></i>
                             <span style="margin-left: 5px" v-text="scope.row.previousStatusDescription"></span>
                             <br />
-                            <span>
-                                <el-icon><Right /></el-icon>
-                            </span>
+                            <span> → </span>
 
                             <i class="x-user-status" :class="statusClass(scope.row.status)" style="margin: 0 5px"></i>
                             <span v-text="scope.row.statusDescription"></span>
@@ -132,7 +131,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column :label="t('table.feed.date')" prop="created_at" width="130">
+            <el-table-column :label="t('table.feed.date')" prop="created_at" width="140">
                 <template #default="scope">
                     <NativeTooltip placement="right">
                         <template #content>
@@ -143,16 +142,18 @@
                 </template>
             </el-table-column>
 
-            <el-table-column :label="t('table.feed.type')" prop="type" width="80">
+            <el-table-column :label="t('table.feed.type')" prop="type" width="130">
                 <template #default="scope">
-                    <span v-text="t('view.feed.filters.' + scope.row.type)"></span>
+                    <el-tag type="info" effect="plain" size="small">{{
+                        t('view.feed.filters.' + scope.row.type)
+                    }}</el-tag>
                 </template>
             </el-table-column>
 
-            <el-table-column :label="t('table.feed.user')" prop="displayName" width="180">
+            <el-table-column :label="t('table.feed.user')" prop="displayName" width="190">
                 <template #default="scope">
                     <span
-                        class="x-link"
+                        class="x-link table-user"
                         style="padding-right: 10px"
                         @click="showUserDialog(scope.row.userId)"
                         v-text="scope.row.displayName"></span>
@@ -178,17 +179,12 @@
                     <template v-else-if="scope.row.type === 'Status'">
                         <template v-if="scope.row.statusDescription === scope.row.previousStatusDescription">
                             <i class="x-user-status" :class="statusClass(scope.row.previousStatus)"></i>
-                            <span style="margin: 0 5px">
-                                <el-icon><Right /></el-icon>
-                            </span>
+                            <span class="mx-2"> → </span>
 
                             <i class="x-user-status" :class="statusClass(scope.row.status)"></i>
                         </template>
                         <template v-else>
-                            <i
-                                class="x-user-status"
-                                :class="statusClass(scope.row.status)"
-                                style="margin-right: 3px"></i>
+                            <i class="x-user-status mr-2" :class="statusClass(scope.row.status)"></i>
                             <span v-text="scope.row.statusDescription"></span>
                         </template>
                     </template>
@@ -210,18 +206,20 @@
 </template>
 
 <script setup>
-    import { Right } from '@element-plus/icons-vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
     import { formatDateFilter, statusClass, timeToText } from '../../shared/utils';
     import { useFeedStore, useUserStore } from '../../stores';
+    import { useTableHeight } from '../../composables/useTableHeight';
 
     const { showUserDialog } = useUserStore();
     const { feedTable } = storeToRefs(useFeedStore());
     const { feedTableLookup } = useFeedStore();
 
     const { t } = useI18n();
+
+    const { containerRef: feedRef } = useTableHeight(feedTable);
 
     /**
      * Function that format the differences between two strings with HTML tags
@@ -338,3 +336,9 @@
             .replace(/<br> /g, '<br>');
     }
 </script>
+
+<style scoped>
+    .table-user {
+        color: var(--table-user-text-color) !important;
+    }
+</style>

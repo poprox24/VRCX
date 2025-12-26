@@ -1,8 +1,14 @@
 <template>
     <template v-if="watchState.isLoggedIn">
-        <NavMenu></NavMenu>
-
-        <el-splitter @resize-end="setAsideWidth">
+        <el-splitter class="nav-inner-splitter" @resize-end="handleResizeEnd">
+            <el-splitter-panel
+                class="nav-layout-panel"
+                :size="navPanelSize"
+                :min="navPanelMin"
+                :max="navPanelMax"
+                :resizable="!isNavCollapsed">
+                <NavMenu></NavMenu>
+            </el-splitter-panel>
             <el-splitter-panel>
                 <RouterView></RouterView>
             </el-splitter-panel>
@@ -52,6 +58,7 @@
 </template>
 
 <script setup>
+    import { computed, onMounted, ref } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useRouter } from 'vue-router';
     import { watch } from 'vue';
@@ -79,12 +86,52 @@
     import VRChatConfigDialog from '../Settings/dialogs/VRChatConfigDialog.vue';
     import WorldDialog from '../../components/dialogs/WorldDialog/WorldDialog.vue';
     import WorldImportDialog from '../Favorites/dialogs/WorldImportDialog.vue';
+    import configRepository from '../../service/config';
 
     const router = useRouter();
 
     const appearanceStore = useAppearanceSettingsStore();
     const { setAsideWidth } = appearanceStore;
-    const { asideWidth, isSideBarTabShow } = storeToRefs(appearanceStore);
+    const { asideWidth, isSideBarTabShow, isNavCollapsed } = storeToRefs(appearanceStore);
+
+    const NAV_COLLAPSED_WIDTH = 64;
+    const NAV_MIN_WIDTH = 200;
+    const NAV_MAX_WIDTH = 360;
+    const NAV_DEFAULT_WIDTH = 240;
+    const NAV_WIDTH_KEY = 'VRCX_navWidth';
+
+    const navWidth = ref(NAV_DEFAULT_WIDTH);
+    const isNavResizing = ref(false);
+
+    const clampNavWidth = (width) => Math.min(Math.max(width, NAV_MIN_WIDTH), NAV_MAX_WIDTH);
+
+    const navPanelSize = computed(() => (isNavCollapsed.value ? NAV_COLLAPSED_WIDTH : navWidth.value));
+    const navPanelMin = computed(() => (isNavCollapsed.value ? NAV_COLLAPSED_WIDTH : NAV_MIN_WIDTH));
+    const navPanelMax = computed(() => (isNavCollapsed.value ? NAV_COLLAPSED_WIDTH : NAV_MAX_WIDTH));
+
+    const persistNavWidth = () => {
+        if (!isNavCollapsed.value) {
+            configRepository.setInt(NAV_WIDTH_KEY, navWidth.value);
+        }
+    };
+
+    const handleResizeEnd = (index, sizes) => {
+        if (Array.isArray(sizes)) {
+            if (index === 0 && !isNavCollapsed.value) {
+                navWidth.value = clampNavWidth(sizes[0]);
+                persistNavWidth();
+            }
+            if (index === 1) {
+                setAsideWidth(sizes);
+            }
+        }
+        isNavResizing.value = false;
+    };
+
+    onMounted(async () => {
+        const savedWidth = await configRepository.getInt(NAV_WIDTH_KEY, NAV_DEFAULT_WIDTH);
+        navWidth.value = clampNavWidth(savedWidth || NAV_DEFAULT_WIDTH);
+    });
 
     watch(
         () => watchState.isLoggedIn,

@@ -1,8 +1,9 @@
 <template>
     <span
         ref="triggerEl"
-        class="vrcx-native-tooltip__trigger"
-        :style="triggerStyle"
+        v-bind="forwardedAttrs"
+        :class="triggerClass"
+        :style="triggerMergedStyle"
         @mouseenter="onEnter"
         @mouseleave="onLeave"
         @focusin="onEnter"
@@ -34,7 +35,13 @@
 </template>
 
 <script setup>
-    import { computed, onBeforeUnmount, ref } from 'vue';
+    import { computed, onBeforeUnmount, ref, useAttrs } from 'vue';
+
+    defineOptions({
+        inheritAttrs: false
+    });
+
+    const attrs = useAttrs();
 
     const props = defineProps({
         content: {
@@ -85,10 +92,23 @@
 
     const anchorName = `--vrcx-tt-${Math.random().toString(36).slice(2, 10)}`;
 
+    const forwardedAttrs = computed(() => {
+        const { class: _class, style: _style, ...rest } = attrs;
+        return rest;
+    });
+
+    const triggerClass = computed(() => {
+        return ['vrcx-native-tooltip__trigger', attrs.class];
+    });
+
     const triggerStyle = computed(() => {
         return {
             'anchor-name': anchorName
         };
+    });
+
+    const triggerMergedStyle = computed(() => {
+        return [triggerStyle.value, attrs.style];
     });
 
     const contentStyle = computed(() => {
