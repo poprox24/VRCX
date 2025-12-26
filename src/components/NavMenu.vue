@@ -60,7 +60,7 @@
             </div>
 
             <div class="nav-menu-container-bottom mb-4">
-                <NativeTooltip
+                <el-tooltip
                     v-if="branch === 'Nightly'"
                     :show-after="150"
                     :content="'Feedback'"
@@ -73,7 +73,7 @@
                         <i class="ri-feedback-line"></i>
                         <span v-show="!isCollapsed" class="bottom-button__label">Feedback</span>
                     </div>
-                </NativeTooltip>
+                </el-tooltip>
 
                 <el-popover
                     v-model:visible="supportMenuVisible"
@@ -110,14 +110,14 @@
                     </div>
                     <template #reference>
                         <div>
-                            <NativeTooltip :show-after="150" :content="t('nav_tooltip.help_support')" placement="right">
+                            <el-tooltip :show-after="150" :content="t('nav_tooltip.help_support')" placement="right">
                                 <div class="bottom-button">
                                     <i class="ri-question-line"></i>
                                     <span v-show="!isCollapsed" class="bottom-button__label">{{
                                         t('nav_tooltip.help_support')
                                     }}</span>
                                 </div>
-                            </NativeTooltip>
+                            </el-tooltip>
                         </div>
                     </template>
                 </el-popover>
@@ -190,7 +190,7 @@
                         </div>
                     </template>
                 </el-popover>
-                <NativeTooltip
+                <el-tooltip
                     :show-after="150"
                     :content="t('nav_tooltip.expand_menu')"
                     :disabled="!isCollapsed"
@@ -201,7 +201,7 @@
                             t('nav_tooltip.collapse_menu')
                         }}</span>
                     </div>
-                </NativeTooltip>
+                </el-tooltip>
             </div>
         </template>
     </div>

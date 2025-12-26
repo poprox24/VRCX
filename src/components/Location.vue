@@ -3,7 +3,7 @@
         <div v-if="!text" class="transparent">-</div>
         <div v-show="text" class="flex items-center">
             <div v-if="region" :class="['flags', 'mr-1.5', region]"></div>
-            <NativeTooltip
+            <el-tooltip
                 :content="`${t('dialog.new_instance.instance_id')}: #${instanceName}`"
                 :disabled="!instanceName"
                 :show-after="300"
@@ -22,10 +22,10 @@
                         ({{ groupName }})
                     </span>
                 </div>
-            </NativeTooltip>
-            <NativeTooltip v-if="isClosed" :content="t('dialog.user.info.instance_closed')">
+            </el-tooltip>
+            <el-tooltip v-if="isClosed" :content="t('dialog.user.info.instance_closed')">
                 <el-icon :class="['inline-block', 'ml-5']" style="color: lightcoral"><WarnTriangleFilled /></el-icon>
-            </NativeTooltip>
+            </el-tooltip>
             <el-icon v-if="strict" :class="['inline-block', 'ml-5']"><Lock /></el-icon>
         </div>
     </div>

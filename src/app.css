@@ -1,5 +1,3 @@
-@charset "utf-8";
-
 /*
 /* Copyright(c) 2019-2025 pypy and individual contributors.
 /* All rights reserved.
@@ -56,7 +54,6 @@ body {
 }
 
 :root {
-    /* shadcn 风格：很淡的强调底色（随主题色变化），用于选中态/hover 等 */
     --el-color-primary-light-9: color-mix(
         in oklch,
         var(--el-color-primary) 12%,
@@ -150,8 +147,6 @@ body {
     --table-user-text-color: var(--color-zinc-900);
 }
 
-/* Dark mode: only remap Element vars to Tailwind colors (no extra tokens).
-   Supports either `html.dark` / `:root.dark` / `:root[data-theme='dark']`. */
 html.dark,
 :root.dark,
 :root[data-theme='dark'] {
@@ -308,7 +303,6 @@ body {
     overflow: hidden;
 }
 
-/* Minimal focus ring (keep it simple, no extra token system) */
 .el-input__wrapper:focus-within,
 .el-textarea__inner:focus,
 .el-select__wrapper.is-focused,
@@ -498,7 +492,6 @@ body {
 
 .el-overlay {
     backdrop-filter: blur(4px);
-    /* Dialog overlay: slightly darker than loading in light mode */
     background-color: color-mix(
         in oklch,
         var(--color-zinc-950) 10%,
@@ -512,7 +505,6 @@ html.dark .el-overlay,
     background-color: var(--el-mask-color) !important;
 }
 
-/* Make v-loading mask match dialog overlay (frosted glass) */
 .el-loading-mask {
     backdrop-filter: blur(4px);
     background-color: var(--el-mask-color) !important;
@@ -534,7 +526,7 @@ html.dark .el-overlay,
 }
 
 .el-pagination .el-pager li {
-    background: transparent !important; /* 去背景 */
+    background: transparent !important;
     border-radius: 6px;
     border: none !important;
     color: var(--el-text-color-secondary);
@@ -553,17 +545,12 @@ html.dark .el-overlay,
     display: none !important;
 }
 
-/* ---------------- do not edit above this line ---------------- */
-
-/* Element Plus: Tooltip / Popover (Popper)
-   Keep light & dark consistent by using the same --el-* theme tokens. */
 :root {
     --x-popper-bg: var(--el-bg-color-overlay);
     --x-popper-border-color: var(--el-border-color-light);
     --x-popper-text-color: var(--el-text-color-regular);
     --x-popper-shadow: var(--el-box-shadow-light);
 
-    /* Ensure Element variables exist even if upstream changes. */
     --el-popover-bg-color: var(--x-popper-bg);
     --el-popover-border-color: var(--x-popper-border-color);
     --el-tooltip-bg-color: color-mix(
@@ -595,7 +582,6 @@ html.dark .el-overlay,
     border-radius: var(--el-border-radius-base);
 }
 
-/* Arrow colors (kept for completeness even if arrows are hidden). */
 .el-tooltip__popper .el-popper__arrow::before,
 .el-popper[role='tooltip'] .el-popper__arrow::before {
     background: var(--el-tooltip-bg-color);

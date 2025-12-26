@@ -2,12 +2,12 @@
     <div class="x-container" ref="gameLogRef">
         <div style="margin: 0 0 10px; display: flex; align-items: center">
             <div style="flex: none; margin-right: 10px; display: flex; align-items: center">
-                <NativeTooltip placement="bottom" :content="t('view.feed.favorites_only_tooltip')">
+                <el-tooltip placement="bottom" :content="t('view.feed.favorites_only_tooltip')">
                     <el-switch
                         v-model="gameLogTable.vip"
                         active-color="var(--el-color-success)"
                         @change="gameLogTableLookup"></el-switch>
-                </NativeTooltip>
+                </el-tooltip>
             </div>
             <el-select
                 v-model="gameLogTable.filter"
@@ -44,12 +44,12 @@
             <el-table-column width="30"></el-table-column>
             <el-table-column :label="t('table.gameLog.date')" prop="created_at" width="140">
                 <template #default="scope">
-                    <NativeTooltip placement="right">
+                    <el-tooltip placement="right">
                         <template #content>
                             <span>{{ formatDateFilter(scope.row.created_at, 'long') }}</span>
                         </template>
                         <span>{{ formatDateFilter(scope.row.created_at, 'short') }}</span>
-                    </NativeTooltip>
+                    </el-tooltip>
                 </template>
             </el-table-column>
 
@@ -166,7 +166,7 @@
                             v-else
                             @click="deleteGameLogEntryPrompt(scope.row)"></i>
                     </template>
-                    <NativeTooltip placement="top" :content="t('dialog.previous_instances.info')">
+                    <el-tooltip placement="top" :content="t('dialog.previous_instances.info')">
                         <el-button
                             v-if="scope.row.type === 'Location'"
                             text
@@ -174,7 +174,7 @@
                             size="small"
                             class="small-button"
                             @click="showPreviousInstancesInfoDialog(scope.row.location)"></el-button>
-                    </NativeTooltip>
+                    </el-tooltip>
                     <el-tooltip placement="top" :content="t('dialog.previous_instances.info')">
                         <i
                             v-if="scope.row.type === 'Location'"
